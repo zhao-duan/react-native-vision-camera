@@ -1,6 +1,6 @@
 {
-  "name": "react-native-vision-camera",
-  "version": "4.0.1",
+  "name": "@react-native-oh-tpl/react-native-vision-camera",
+  "version": "4.0.1-0.0.1",
   "description": "A powerful, high-performance React Native Camera library.",
   "main": "lib/commonjs/index",
   "module": "lib/module/index",
@@ -13,20 +13,23 @@
     "lib/commonjs",
     "lib/module",
     "lib/typescript",
-    "android/build.gradle",
-    "android/gradle.properties",
-    "android/CMakeLists.txt",
-    "android/src",
-    "ios/**/*.h",
-    "ios/**/*.m",
-    "ios/**/*.mm",
-    "ios/**/*.cpp",
-    "ios/**/*.swift",
     "app.plugin.js",
     "VisionCamera.podspec",
-    "README.md"
+    "README.md",
+    "harmony"
   ],
+  "harmony": {
+    "alias": "react-native-vision-camera"
+  },
+  "codegenConfig": {
+    "name": "RTNVisionCameraSpecs",
+    "type": "components",
+    "jsSrcsDir": "src"
+  },
   "scripts": {
+    "codegen": "cd D:\\rnoh\\tester && npm run codegen",
+    "har": "rm -rf .\\harmony\\vision_camera && cp -r D:\\rnoh\\tester\\harmony\\vision_camera .\\harmony\\vision_camera",
+    "move": "npm run build && npm pack && copy .\\*.tgz D:\\rnoh\\tester && cd D:\\rnoh\\tester && npm i @react-native-oh-tpl/react-native-vision-camera@file:./react-native-oh-tpl-react-native-vision-camera-4.0.1-0.0.1.tgz -dd",
     "typescript": "tsc --noEmit",
     "lint": "eslint \"**/*.{js,ts,tsx}\"",
     "lint-ci": "yarn lint -f ./node_modules/@firmnav/eslint-github-actions-formatter/dist/formatter.js",
@@ -35,18 +38,13 @@
     "release": "bob build && release-it",
     "pods": "cd example && yarn pods",
     "bootstrap": "yarn && cd example && yarn && yarn pods",
-    "check-android": "scripts/ktlint.sh && scripts/clang-format.sh",
-    "check-ios": "scripts/swiftlint.sh && scripts/swiftformat.sh && scripts/clang-format.sh",
     "check-js": "yarn lint --fix && yarn typescript",
     "check-cpp": "scripts/clang-format.sh",
     "check-all": "scripts/check-all.sh",
-    "clean-ios": "scripts/clean-ios.sh",
-    "clean-android": "scripts/clean-android.sh",
-    "clean-js": "scripts/clean-js.sh",
-    "prepack": "cp ../README.md ./README.md",
-    "postpack": "rm ./README.md"
+    "clean-js": "scripts/clean-js.sh"
   },
   "keywords": [
+    "harmony",
     "react",
     "native",
     "camera",
@@ -55,8 +53,6 @@
     "vision",
     "javascript",
     "typescript",
-    "android",
-    "ios",
     "library",
     "instagram",
     "snapchat",
@@ -95,12 +91,12 @@
     "eslint-plugin-prettier": "^5.0.0",
     "prettier": "^3.0.1",
     "react": "^18.2.0",
-    "react-native": "^0.72.3",
+    "react-native": "^0.74.1",
     "react-native-builder-bob": "^0.21.3",
     "react-native-reanimated": "^3.8.1",
     "react-native-worklets-core": "^1.1.1",
     "release-it": "^16.1.3",
-    "typescript": "^5.1.6"
+    "typescript": "^5.4.5"
   },
   "peerDependencies": {
     "@shopify/react-native-skia": "*",
@@ -170,7 +166,8 @@
       [
         "typescript",
         {
-          "project": "tsconfig.json"
+          "project": "tsconfig.json",
+          "tsc": "./node_modules/.bin/tsc"
         }
       ]
     ]

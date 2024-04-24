@@ -1,95 +1,135 @@
-<a href="https://margelo.io">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="./docs/static/img/banner-dark.png" />
-    <source media="(prefers-color-scheme: light)" srcset="./docs/static/img/banner-light.png" />
-    <img alt="VisionCamera" src="./docs/static/img/banner-light.png" />
-  </picture>
-</a>
+# harmony使用说明
 
-<br />
+## 一、安装
 
-<div>
-  <img align="right" width="35%" src="docs/static/img/example.png">
-</div>
+### 1.1 rnoh项目安装
 
-### Features
+前往[releases](https://github.com/react-native-oh-library/react-native-vision-camera/releases) 页面下载最新的`tgz`包，注意版本号，本文中以`4.0.1-0.0.1`为例，移动到`rnoh/tester`目录下
 
-VisionCamera is a powerful, high-performance Camera library for React Native. It features:
+在`tester`目录下安装`tgz`包
 
-* 📸 Photo and Video capture
-* 👁️ QR/Barcode scanner
-* 📱 Customizable devices and multi-cameras ("fish-eye" zoom)
-* 🎞️ Customizable resolutions and aspect-ratios (4k/8k images)
-* ⏱️ Customizable FPS (30..240 FPS)
-* 🧩 [Frame Processors](https://react-native-vision-camera.com/docs/guides/frame-processors) (JS worklets to run facial recognition, AI object detection, realtime video chats, ...)
-* 🎨 Drawing shapes, text, filters or shaders onto the Camera
-* 🔍 Smooth zooming (Reanimated)
-* ⏯️ Fast pause and resume
-* 🌓 HDR & Night modes
-* ⚡ Custom C++/GPU accelerated video pipeline (OpenGL)
-
-Install VisionCamera from npm:
-
-```sh
-npm i react-native-vision-camera
-cd ios && pod install
+```shell
+npm i @react-native-oh-tpl/react-native-vision-camera@file:./react-native-oh-tpl-react-native-vision-camera-4.0.1-0.0.1.tgz
 ```
 
-..and get started by [setting up permissions](https://react-native-vision-camera.com/docs/guides)!
+### 1.2 harmony项目安装
 
-### Documentation
+`tester/harmony/entry/oh-package.json5` 添加以下内容，然后同步即可
 
-* [Guides](https://react-native-vision-camera.com/docs/guides)
-* [API](https://react-native-vision-camera.com/docs/api)
-* [Example](./package/example/)
-* [Frame Processor Plugins](https://react-native-vision-camera.com/docs/guides/frame-processor-plugins-community)
-
-### ShadowLens
-
-To see VisionCamera in action, check out [ShadowLens](https://mrousavy.com/projects/shadowlens)!
-
-<div>
-  <a href="https://apps.apple.com/app/shadowlens/id6471849004">
-    <img height="40" src="docs/static/img/appstore.svg" />
-  </a>
-  <a href="https://play.google.com/store/apps/details?id=com.mrousavy.shadowlens">
-    <img height="40" src="docs/static/img/googleplay.svg" />
-  </a>
-</div>
-
-### Example
-
-```tsx
-function App() {
-  const device = useCameraDevice('back')
-
-  if (device == null) return <NoCameraErrorView />
-  return (
-    <Camera
-      style={StyleSheet.absoluteFill}
-      device={device}
-      isActive={true}
-    />
-  )
+```json
+{
+  "dependencies": {
+    "@react-native-oh-tpl/react-native-vision-camera": "file:../../node_modules/@react-native-oh-tpl/react-native-vision-camera/harmony/vision_camera.har"
+  }
 }
 ```
 
-> See the [example](./package/example/) app
+> 调试时应当修改为本地目录路径，例如`"file:../vision_camera"`
 
-### Adopting at scale
+### 1.3 框架依赖重定向
 
-<a href="https://github.com/sponsors/mrousavy">
-  <img align="right" width="160" alt="This library helped you? Consider sponsoring!" src=".github/funding-octocat.svg">
-</a>
+`tester/harmony/oh-package.json5`
 
-VisionCamera is provided _as is_, I work on it in my free time.
+```diff
+{
+  "dependencies": {},
++  "overrides": {
++    "@rnoh/react-native-openharmony": "file:./react_native_openharmony"
++  }
+}
+```
 
-If you're integrating VisionCamera in a production app, consider [funding this project](https://github.com/sponsors/mrousavy) and <a href="mailto:me@mrousavy.com?subject=Adopting VisionCamera at scale">contact me</a> to receive premium enterprise support, help with issues, prioritize bugfixes, request features, help at integrating VisionCamera and/or Frame Processors, and more.
+## 二、引入(已引入过可忽略该步骤)
 
-### Socials
+`tester/harmony/entry/src/main/cpp/CMakeLists.txt`
 
-* 🐦 [**Follow me on Twitter**](https://twitter.com/mrousavy) for updates
-* 📝 [**Check out my blog**](https://mrousavy.com/blog) for examples and experiments
-* 💬 [**Join the Margelo Community Discord**](https://discord.gg/6CSHz2qAvA) for chatting about VisionCamera
-* 💖 [**Sponsor me on GitHub**](https://github.com/sponsors/mrousavy) to support my work
-* 🍪 [**Buy me a Ko-Fi**](https://ko-fi.com/mrousavy) to support my work
+```diff
+project(rnapp)
+cmake_minimum_required(VERSION 3.4.1)
+set(CMAKE_SKIP_BUILD_RPATH TRUE)
++set(VISION_CAMERA_DIR "../../../oh_modules/@react-native-oh-tpl/react-native-vision-camera/src/main/cpp")
+add_compile_definitions(WITH_HITRACE_SYSTRACE)
+
+# RNOH_BEGIN: manual_package_linking_1
+add_subdirectory("../../../../sample_package/src/main/cpp" ./sample-package)
++add_subdirectory("${VISION_CAMERA_DIR}" ./vision-camera)
+# RNOH_END: manual_package_linking_1
+
+file(GLOB GENERATED_CPP_FILES "./generated/*.cpp")
++file(GLOB VISION_CAMERA_CPP_FILES "${VISION_CAMERA_DIR}/*.cpp")
+
+add_library(rnoh_app SHARED
+    ${GENERATED_CPP_FILES}
++    ${VISION_CAMERA_CPP_FILES}
+    "./PackageProvider.cpp"
+    "${RNOH_CPP_DIR}/RNOHAppNapiBridge.cpp"
+)
+target_link_libraries(rnoh_app PUBLIC rnoh)
+
+# RNOH_BEGIN: manual_package_linking_2
+target_link_libraries(rnoh_app PUBLIC rnoh_sample_package)
++target_link_libraries(rnoh_app PUBLIC rnoh_vision_camera)
+# RNOH_END: manual_package_linking_2
+```
+
+`tester/harmony/entry/src/main/cpp/PackageProvider.cpp`
+
+```diff
+#include "RNOH/PackageProvider.h"
+#include "generated/RNOHGeneratedPackage.h"
+#include "SamplePackage.h"
++#include "VisionCameraPackage.h"
+
+using namespace rnoh;
+
+std::vector<std::shared_ptr<Package>> PackageProvider::getPackages(Package::Context ctx) {
+    return {
+        std::make_shared<RNOHGeneratedPackage>(ctx), 
+        std::make_shared<SamplePackage>(ctx),
++        std::make_shared<VisionCameraPackage>(ctx),
+    };
+}
+```
+
+`tester/harmony/entry/ets/pages/Index.ets `添加以下内容
+
+```diff
+import { GeneratedSampleView, PropsDisplayer, SampleView } from 'rnoh-sample-package';
++import { VisionCameraView } from "@react-native-oh-tpl/react-native-vision-camera";
+
+@Builder
+export function buildCustomRNComponent(ctx: ComponentBuilderContext) {
+  Stack(){
+    if (ctx.componentName === SampleView.NAME) {
+      SampleView({
+        ctx: ctx.rnComponentContext,
+        tag: ctx.tag,
+      })
+    }
++    if (ctx.componentName === VisionCameraView.NAME) {
++      VisionCameraView({
++        ctx: ctx.rnComponentContext,
++        tag: ctx.tag,
++      })
+    }
+  }
+  .position({x:0, y: 0})
+}
+```
+
+`tester/harmony/entry/ets/RNPackagesFactory.ts `添加以下内容
+
+```diff
+import type { RNPackageContext, RNPackage } from 'rnoh/ts';
+import { SamplePackage } from 'rnoh-sample-package/ts';
++import { VisionCameraModulePackage } from "@react-native-oh-tpl/react-native-vision-camera/ts";
+
+export function createRNPackages(ctx: RNPackageContext): RNPackage[] {
+  return [new SamplePackage(ctx),
++    new VisionCameraModulePackage(ctx),
+  ];
+}
+```
+
+
+

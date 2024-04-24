@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import type { CameraPermissionRequestResult, CameraPermissionStatus } from '../Camera'
-import { Camera } from '../Camera'
 import { AppState } from 'react-native'
+import NativeVisionCameraModule, { CameraPermissionRequestResult, CameraPermissionStatus } from '../NativeVisionCameraModule'
 
 interface PermissionState {
   /**
@@ -15,6 +14,7 @@ interface PermissionState {
    */
   requestPermission: () => Promise<boolean>
 }
+
 
 function usePermission(get: () => CameraPermissionStatus, request: () => Promise<CameraPermissionRequestResult>): PermissionState {
   const [hasPermission, setHasPermission] = useState(() => get() === 'granted')
@@ -60,7 +60,7 @@ function usePermission(get: () => CameraPermissionStatus, request: () => Promise
  * ```
  */
 export function useCameraPermission(): PermissionState {
-  return usePermission(Camera.getCameraPermissionStatus, Camera.requestCameraPermission)
+  return usePermission(NativeVisionCameraModule.getCameraPermissionStatus, NativeVisionCameraModule.requestCameraPermission)
 }
 
 /**
@@ -78,7 +78,7 @@ export function useCameraPermission(): PermissionState {
  * ```
  */
 export function useMicrophonePermission(): PermissionState {
-  return usePermission(Camera.getMicrophonePermissionStatus, Camera.requestMicrophonePermission)
+  return usePermission(NativeVisionCameraModule.getMicrophonePermissionStatus, NativeVisionCameraModule.requestMicrophonePermission)
 }
 
 /**
@@ -96,5 +96,5 @@ export function useMicrophonePermission(): PermissionState {
  * ```
  */
 export function useLocationPermission(): PermissionState {
-  return usePermission(Camera.getLocationPermissionStatus, Camera.requestLocationPermission)
+  return usePermission(NativeVisionCameraModule.getLocationPermissionStatus, NativeVisionCameraModule.requestLocationPermission)
 }

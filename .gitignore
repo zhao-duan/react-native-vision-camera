@@ -10,3 +10,6 @@
 /ios
 /android
 /lib
+
+
+/package/*.tgz

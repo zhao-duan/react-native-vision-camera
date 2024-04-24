@@ -1,5 +1,5 @@
 import type { AutoFocusSystem, CameraDevice, CameraDeviceFormat, VideoStabilizationMode } from '../types/CameraDevice'
-import { CameraRuntimeError } from '../CameraError'
+import { CameraRuntimeError } from '../types/CameraError'
 
 interface Size {
   width: number

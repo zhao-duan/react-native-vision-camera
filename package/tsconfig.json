@@ -18,19 +18,19 @@
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "strict": true,
-    "target": "esnext",
-    "outDir": "lib"
+    "target": "esnext"
   },
   "include": [
     "src",
     ".eslintrc.js",
     "babel.config.js",
-    "react-native.config.js",
+    "react-native.config.js", "index.ts", "index.d.ts", "harmony", "vision_camera", "src_bak/bak/hooks", "src/devices",
   ],
   "exclude": [
     "node_modules",
     "lib",
     "docs",
-    "example"
+    "example",
+    "harmony"
   ]
 }
