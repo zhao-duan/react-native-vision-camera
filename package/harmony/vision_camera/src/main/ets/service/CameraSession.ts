@@ -130,7 +130,6 @@ export default class CameraSession {
     this.focus(undefined);
     Logger.info(TAG, 'initCamera end');
     this.initProps(props);
-
   }
 
   /**
@@ -144,6 +143,9 @@ export default class CameraSession {
     }
     if (props.zoom !== undefined) {
       this.setSmoothZoom(props.zoom);
+    }
+    if (props.audio !== undefined) {
+      this.setAudio(props.audio);
     }
     if (props.torch !== undefined) {
       this.setTorch(props.torch)

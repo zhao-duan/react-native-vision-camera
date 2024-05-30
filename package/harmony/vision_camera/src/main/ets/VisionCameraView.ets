@@ -221,6 +221,14 @@ export struct VisionCameraView {
       Logger.info(TAG, `updateProps, activeChange: ${props.isActive}`);
       this.cameraSession.activeChange(props.isActive);
     }
+    if (props.audio !== undefined && this.prevProps?.audio !== props.audio) {
+      Logger.info(TAG, `updateProps, audioChange: ${props.audio}`);
+      this.cameraSession.setAudio(props.audio);
+    }
+    if (props.videoStabilizationMode !== undefined && this.prevProps?.videoStabilizationMode !== props.videoStabilizationMode) {
+      Logger.info(TAG, `updateProps, videoStabilizationModeChange: ${props.videoStabilizationMode}`);
+      this.cameraSession.setVideoStabilizationMode(props.videoStabilizationMode);
+    }
     if (props.preview !== undefined && this.prevProps?.preview !== props.preview) {
       Logger.info(TAG, `updateProps, previewChange: ${props.preview}`);
       this.cameraSession.previewChange(props.preview);
