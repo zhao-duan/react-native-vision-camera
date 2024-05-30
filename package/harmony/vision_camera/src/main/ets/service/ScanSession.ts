@@ -46,7 +46,10 @@ export default class ScanSession {
    * 启动相机进行扫码
    */
   async scanStart(surfaceId: string, SurfaceRect, isFirst?: boolean): Promise<ScanResult> {
-    Logger.info(TAG, `ScanStart:surfaceId: ${surfaceId}}`)
+    Logger.info(TAG, `ScanStart:surfaceId: ${surfaceId}`)
+    Logger.info(TAG, `ScanStart:SurfaceRect: ${JSON.stringify(SurfaceRect)}`)
+    Logger.info(TAG, `ScanStart:isFirst: ${isFirst}`)
+    Logger.info(TAG, `ScanStart:this.isScanEnd: ${this.isScanEnd}`)
     if (this.isScanEnd) {
       this.setEndStatus(false)
       // 获取到扫描结果后暂停相机流
@@ -62,13 +65,13 @@ export default class ScanSession {
           surfaceId: surfaceId
         };
         Logger.info(TAG, `start viewControl, info: ${JSON.stringify(viewControl)}`);
-        customScan.start(viewControl, async (error: BusinessError, result: Array<scanBarcode.ScanResult>) => {
+        customScan.start(viewControl, (error: BusinessError, result: Array<scanBarcode.ScanResult>) => {
           if (error) {
             Logger.error(TAG, `start failed, code: ${error.code}, message: ${error.message}`);
             reject(error);
             return;
           }
-          const scanResult = await this.showScanResult(result);
+          const scanResult = this.showScanResult(result);
           Logger.info(TAG, `scanResult11: ${JSON.stringify(scanResult)}`);
           this.setEndStatus(true)
           resolve(scanResult)
@@ -80,7 +83,7 @@ export default class ScanSession {
   /**
    * 获取扫描结果
    */
-  async showScanResult(result: Array<scanBarcode.ScanResult>) {
+  showScanResult(result: Array<scanBarcode.ScanResult>) {
     if (result.length > 0) {
       const codes: Code[] = []
       result.forEach((data, index) => {

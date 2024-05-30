@@ -142,6 +142,7 @@ export interface VisionCameraProps extends ViewProps {
      * Called when the camera session was successfully initialized. This will get called everytime a new device is set.
      */
     onInitialized?: () => void
+    onShutter?: (shutterEvent: { type: 'photo' | 'snapshot' }) => void
     /**
      * Called when the camera started the session (`isActive={true}`)
      */

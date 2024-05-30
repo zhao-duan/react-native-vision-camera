@@ -168,7 +168,7 @@ export struct VisionCameraView {
           this.scanSession.initScan(props.codeScanner?.codeTypes);
           Logger.info(TAG,
             `subscribeToLifecycleEvents FOREGROUND scanSession initScan, ${JSON.stringify(this.scanSession)}`);
-          if (props.isActive && props.preview) {
+          if (props.isActive) {
             this.scanStart(true);
           }
         }, 200)
@@ -276,10 +276,9 @@ export struct VisionCameraView {
     if (this.cameraState === cameraState.SCAN && !Utils.isEmptyObject(this.scanSession)) {
       Logger.info(TAG, `updateProps scanSession`);
       const isActiveChange = props.isActive !== undefined && this.prevProps?.isActive !== props.isActive;
-      const previewChange = props.preview !== undefined && this.prevProps?.preview !== props.preview;
-      if (isActiveChange || previewChange) {
-        Logger.info(TAG, `Scan updateProps, isActive: ${props.isActive} preview: ${props.preview}`);
-        if (props.isActive && props.preview) {
+      if (isActiveChange) {
+        Logger.info(TAG, `Scan updateProps, isActive: ${props.isActive}`);
+        if (props.isActive) {
           this.scanStart(true);
         } else {
           this.scanSession.scanStop();
@@ -389,9 +388,10 @@ export struct VisionCameraView {
       this.ctx.rnInstance.emitDeviceEvent('onCodeScanned', scanResult);
       Logger.info(TAG, `get scan result: ${JSON.stringify(scanResult)}`)
 
-      this.timer = setTimeout(() => {
-        this.scanStart()
-      }, 1000)
+      const isActive = this.descriptorWrapper['rawProps'].isActive;
+      if(isActive){
+        this.scanStart();
+      }
     }
   }
 
@@ -399,6 +399,7 @@ export struct VisionCameraView {
    * 拍照
    */
   async taskPhoto(options: TakePhotoOptions): Promise<PhotoFile> {
+    this.ctx.rnInstance.emitDeviceEvent('onShutter', { type: 'photo' });
     const photoFile = await this.cameraSession.taskPhoto(options);
     this.ctx.rnInstance.emitDeviceEvent('onTaskPhoto', photoFile);
     return photoFile;
