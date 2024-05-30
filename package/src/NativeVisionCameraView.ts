@@ -108,6 +108,7 @@ export interface NativeVisionCameraProps extends ViewProps {
   onStarted?: BubblingEventHandler<Readonly<{}>>;
   onStopped?: BubblingEventHandler<Readonly<{}>>;
   onInitialized?: BubblingEventHandler<Readonly<{}>>;
+  onShutter?: BubblingEventHandler<{ type: 'photo' | 'snapshot' }>;
   onError?: BubblingEventHandler<{ error: string }>;
   onCodeScanned?: (codes: Code[], frame: CodeScannerFrame) => void;
 }
