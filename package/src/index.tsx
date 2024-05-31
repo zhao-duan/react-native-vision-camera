@@ -311,10 +311,10 @@ export const Camera = forwardRef<VisionCameraRef, VisionCameraProps>(
             const onShutterListener = DeviceEventEmitter.addListener('onShutter', (shutterEvent: { type: 'photo' | 'snapshot' }) => {
                 onShutter?.(shutterEvent);
             });
-            const onStartedListener = DeviceEventEmitter.addListener('onStarted', () => {
+            const onStartedListener = DeviceEventEmitter.addListener('onCameraStarted', () => {
                 onStarted?.();
             });
-            const onStoppedListener = DeviceEventEmitter.addListener('onStopped', () => {
+            const onStoppedListener = DeviceEventEmitter.addListener('onCameraStopped', () => {
                 onStopped?.();
             });
             const onErrorListener = DeviceEventEmitter.addListener('onError', (err) => {

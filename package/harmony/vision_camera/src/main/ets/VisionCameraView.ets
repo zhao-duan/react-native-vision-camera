@@ -220,6 +220,13 @@ export struct VisionCameraView {
     if (props.isActive !== undefined && this.prevProps?.isActive !== props.isActive) {
       Logger.info(TAG, `updateProps, activeChange: ${props.isActive}`);
       this.cameraSession.activeChange(props.isActive);
+      if(props.isActive) {
+        Logger.info(TAG, `emitDeviceEvent, onCameraStarted`);
+        this.ctx.rnInstance.emitDeviceEvent('onCameraStarted', {});
+      } else {
+        Logger.info(TAG, `emitDeviceEvent, onCameraStopped`);
+        this.ctx.rnInstance.emitDeviceEvent('onCameraStopped', {});
+      }
     }
     if (props.audio !== undefined && this.prevProps?.audio !== props.audio) {
       Logger.info(TAG, `updateProps, audioChange: ${props.audio}`);

@@ -420,13 +420,9 @@ export default class CameraSession {
       if (isActive) {
         await targetSession.start();
         Logger.info(TAG, `activeChange session start success.`);
-        this.ctx.rnInstance.emitDeviceEvent('onStarted', {});
-        Logger.info(TAG, `activeChange session start emitDeviceEvent success.`);
       } else {
         await targetSession.stop();
         Logger.info(TAG, `activeChange session stop success.`);
-        this.ctx.rnInstance.emitDeviceEvent('onStopped', {});
-        Logger.info(TAG, `activeChange session stop emitDeviceEvent success.`);
       }
     } catch (error) {
       Logger.error(TAG, `The activeChange targetSession start call failed. error code: ${error.code}`);
