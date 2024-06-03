@@ -1153,14 +1153,16 @@ export default class CameraSession {
   async startRecording(options: RecordVideoOptions, props: VisionCameraViewSpec.RawProps) {
     Logger.info(TAG,
       `startRecording.state:${this.avRecorder.state}, videoCodeC:${options.videoCodec}, this:${this.videoCodeC}`);
-    if (this.avRecorder.state === 'prepared' || this.avRecorder.state === 'idle') {
+    if (this.avRecorder.state === 'prepared' || this.avRecorder.state === 'idle' || this.avRecorder.state === 'released') {
 
       if (options.videoCodec && options.videoCodec !== this.videoCodeC) {
         this.videoCodeC = options.videoCodec
         await this.avRecorder.release();
         Logger.info(TAG, `startRecording.changeCodeC`);
+      }
+
+      if (this.avRecorder.state === 'released') {
         this.avRecorder = await media.createAVRecorder();
-        Logger.info(TAG, `startRecording.released`);
       }
 
       if (this.avRecorder.state === 'idle' || this.avRecorder.state === 'released') {
@@ -1223,7 +1225,7 @@ export default class CameraSession {
         Logger.info(TAG, `stopRecording.videoOutput stop`);
       });
       // 2.重置
-      await this.avRecorder.reset();
+      await this.avRecorder.release();
 
       if (this.videoSession.hasFlash() &&
         this.videoSession.getFlashMode() === camera.FlashMode.FLASH_MODE_ALWAYS_OPEN &&
