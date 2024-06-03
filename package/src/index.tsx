@@ -44,8 +44,9 @@ export * from './hooks/useCodeScanner'
 import { CameraDevicesChangedCallback, CameraDevicesChangedReturn, CameraPermissionRequestResult, CameraPermissionStatus } from "./NativeVisionCameraModule";
 import { CameraDevice } from "./types/CameraDevice";
 import { Point } from "./types/Point";
-import { RecordVideoOptions } from "./types/VideoFile";
+import { RecordVideoOptions, VideoFile } from "./types/VideoFile";
 import { Code, CodeScannerFrame } from "./types/CodeScanner";
+import { CameraCaptureError } from "./types/CameraError";
 
 type VisionCameraCommands =
     | 'takePhoto'
@@ -152,6 +153,14 @@ export const Camera = forwardRef<VisionCameraRef, VisionCameraProps>(
         const startRecording = useCallback(
             (options: RecordVideoOptions) => {
                 if (!VisionCameraRef.current) throw new Error("VisionCameraRef.current is NaN");
+                const onRecordingFinishedListener = DeviceEventEmitter.addListener('onRecordingFinished', (video: VideoFile) => {
+                    options.onRecordingFinished(video);
+                    onRecordingFinishedListener.remove();
+                });
+                const onRecordingErrorListener = DeviceEventEmitter.addListener('onRecordingError', (error: CameraCaptureError) => {
+                    options.onRecordingError(error);
+                    onRecordingErrorListener.remove();
+                });
                 return VisionCameraCommands.startRecording(VisionCameraRef.current, options);
             },
             []

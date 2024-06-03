@@ -116,7 +116,7 @@ export struct VisionCameraView {
       this.scanSession.initScan(props.codeScanner?.codeTypes);
       this.scanStart(true);
     } else {
-      this.cameraSession = new CameraSession();
+      this.cameraSession = new CameraSession(this.ctx);
       this.cameraSession.initCamera(this.surfaceId, props,
         this.cameraState === cameraState.PHOTO ? camera.SceneMode.NORMAL_PHOTO : camera.SceneMode.NORMAL_VIDEO);
       this.cameraSession.setResizeMode(props.resizeMode, this.localDisplayWidth, this.localDisplayHeight,
@@ -487,8 +487,9 @@ export struct VisionCameraView {
   /**
    * 停止录制
    */
-  stopRecording() {
-    this.cameraSession.stopRecording()
+  async stopRecording() {
+    const result = await this.cameraSession.stopRecording();
+    this.ctx.rnInstance.emitDeviceEvent('onRecordingFinished', result);
   }
 
   /**
