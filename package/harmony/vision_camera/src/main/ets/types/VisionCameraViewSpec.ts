@@ -13,6 +13,7 @@ import { Code, CodeScannerFrame, Point, TakePhotoOptions } from '../core/CameraC
 import { RecordVideoOptions } from './VideoFile';
 
 type VideoStabilizationMode = 'off' | 'standard' | 'cinematic' | 'cinematic-extended' | 'auto';
+
 export namespace VisionCameraViewSpec {
   export const NAME = "VisionCameraView" as const
 

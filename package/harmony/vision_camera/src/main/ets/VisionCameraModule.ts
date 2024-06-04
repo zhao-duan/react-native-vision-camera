@@ -4,6 +4,7 @@ import { CameraDeviceInfo } from './core/CameraDeviceInfo';
 import { CameraPermissionRequestResult, CameraPermissionStatus } from './core/CameraConfig';
 import { VisionCameraModuleSpec } from './types/VisionCameraModuleSpec';
 import Logger from './utils/Logger';
+
 const TAG: string = 'VisionCameraModule:'
 
 export class VisionCameraModule extends TurboModule implements VisionCameraModuleSpec.Spec {

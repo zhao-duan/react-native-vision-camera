@@ -15,17 +15,10 @@ public:
 
 #ifdef ANDROID
     VisionCameraViewState(VisionCameraViewState const &previousState, folly::dynamic data){};
-        folly::dynamic getDynamic() const
-        {
-            return {};
-        };
-        MapBuffer getMapBuffer() const
-        {
-            return MapBufferBuilder::EMPTY();
-        };
-#endif    
+    folly::dynamic getDynamic() const { return {}; };
+    MapBuffer getMapBuffer() const { return MapBufferBuilder::EMPTY(); };
+#endif
 };
 
 } // namespace react
 } // namespace facebook
-

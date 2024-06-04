@@ -76,6 +76,7 @@ export interface PhotoFile {
    */
   path: string
 }
+
 export interface ScanResult {
   codes: Code[]
   frame: CodeScannerFrame
@@ -123,12 +124,15 @@ export const PermissionArray: Array<Permissions> = [
 
 export type CameraPermissionStatus = 'granted' | 'not-determined' | 'denied' | 'restricted'
 
-export interface ScanRect {width: number, height: number}
+export interface ScanRect {
+  width: number,
+  height: number
+}
 
 export type CameraPermissionRequestResult = 'granted' | 'denied'
 
 export type CodeType =
-  | 'code-128'
+| 'code-128'
   | 'code-39'
   | 'code-93'
   | 'codabar'

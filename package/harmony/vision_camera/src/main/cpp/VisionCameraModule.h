@@ -8,7 +8,7 @@
 namespace rnoh {
 
 class JSI_EXPORT VisionCameraModule : public ArkTSTurboModule {
-  public:
+public:
     VisionCameraModule(const ArkTSTurboModule::Context ctx, const std::string name);
 };
 

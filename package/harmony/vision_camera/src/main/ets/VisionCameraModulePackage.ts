@@ -1,11 +1,5 @@
-import {
-  RNPackage,
-  TurboModulesFactory,
-} from "@rnoh/react-native-openharmony/ts";
-import type {
-  TurboModule,
-  TurboModuleContext,
-} from "@rnoh/react-native-openharmony/ts";
+import { RNPackage, TurboModulesFactory, } from "@rnoh/react-native-openharmony/ts";
+import type { TurboModule, TurboModuleContext, } from "@rnoh/react-native-openharmony/ts";
 import { VisionCameraModule } from './VisionCameraModule';
 import { VisionCameraModuleSpec } from './types/VisionCameraModuleSpec';
 

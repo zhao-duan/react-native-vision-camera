@@ -4,8 +4,5 @@
 #include <react/bridging/Bridging.h>
 
 namespace facebook {
-namespace react {
-
-} // namespace react
+namespace react {} // namespace react
 } // namespace facebook
-

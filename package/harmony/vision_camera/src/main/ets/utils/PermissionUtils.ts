@@ -93,7 +93,7 @@ export default class PermissionUtils {
     )
     let appInfo: bundleManager.ApplicationInfo = bundleInfo.appInfo;
     let tokenId = appInfo.accessTokenId;
-    let  state = this.atManager.checkAccessTokenSync(tokenId, permission);
+    let state = this.atManager.checkAccessTokenSync(tokenId, permission);
     Logger.info(TAG, `checkAccessToken permission:${permission} = ${JSON.stringify(state)}`);
     return state === abilityAccessCtrl.GrantStatus.PERMISSION_GRANTED;
   }

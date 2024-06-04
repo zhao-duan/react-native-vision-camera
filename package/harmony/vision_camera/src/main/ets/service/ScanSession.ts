@@ -57,6 +57,7 @@ export default class ScanSession {
         Logger.info(TAG, `ScanStart:start.stop`)
         this.scanStop()
       }
+      this.ScanFrame = SurfaceRect;
 
       return new Promise((resolve, reject) => {
         let viewControl: customScan.ViewControl = {
@@ -95,11 +96,17 @@ export default class ScanSession {
         }
         const codeW = rect.right - rect.left
         const codeH = rect.bottom - rect.top
+
+        const layout = {
+          width: this.ScanFrame.width,
+          height: this.ScanFrame.height,
+        }
+        const scanFrame = this.ScanFrame;
         const codeFrame: Frame = {
-          width: codeW,
-          height: codeH,
-          x: rect.left,
-          y: rect.top
+          width: codeW / (layout.height / scanFrame.width),
+          height: codeH / (layout.width / scanFrame.height),
+          x: rect.left / (layout.width / scanFrame.height),
+          y: rect.top / (layout.height / scanFrame.width)
         }
         const corners: Point[] = [{
           x: rect.left, y: rect.top
@@ -119,9 +126,7 @@ export default class ScanSession {
       })
       const scanResult: ScanResult = {
         codes: codes,
-        frame: {
-          width: this.ScanFrame.width, height: this.ScanFrame.height
-        }
+        frame: this.ScanFrame
       }
       Logger.info(TAG, `scan self result: ${JSON.stringify(scanResult)}`);
       return scanResult

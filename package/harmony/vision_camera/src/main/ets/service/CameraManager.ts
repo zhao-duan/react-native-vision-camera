@@ -9,7 +9,6 @@ import CameraSession from './CameraSession';
 const TAG: string = 'CameraDevice:'
 
 export default class CameraManager {
-
   getAvailableCameraDevices(): CameraDeviceInfo[] {
     let cameraSession: CameraSession = new CameraSession();
     let cameraInfos = cameraSession.initDeviceInfo();

@@ -6,7 +6,7 @@
 
 namespace rnoh {
 class VisionCameraViewJSIBinder : public ViewComponentJSIBinder {
-  protected:
+protected:
     facebook::jsi::Object createNativeProps(facebook::jsi::Runtime &rt) override {
         auto object = ViewComponentJSIBinder::createNativeProps(rt);
         object.setProperty(rt, "codeScanner", "Object");
@@ -27,7 +27,7 @@ class VisionCameraViewJSIBinder : public ViewComponentJSIBinder {
         object.setProperty(rt, "enableLocation", true);
         object.setProperty(rt, "photoQualityBalance", 'balanced');
         object.setProperty(rt, "videoHdr", false);
-        
+
         return object;
     }
 

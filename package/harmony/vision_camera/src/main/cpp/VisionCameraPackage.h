@@ -19,7 +19,8 @@ public:
 class VisionCameraEventEmitRequestHandler : public EventEmitRequestHandler {
 public:
     void handleEvent(Context const &ctx) override {
-        auto eventEmitter = ctx.shadowViewRegistry->getEventEmitter<facebook::react::VisionCameraViewEventEmitter>(ctx.tag);
+        auto eventEmitter =
+            ctx.shadowViewRegistry->getEventEmitter<facebook::react::VisionCameraViewEventEmitter>(ctx.tag);
         if (eventEmitter == nullptr) {
             return;
         }

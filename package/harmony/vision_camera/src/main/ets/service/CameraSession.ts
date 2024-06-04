@@ -69,11 +69,8 @@ export default class CameraSession {
     quality: camera.QualityLevel.QUALITY_LEVEL_MEDIUM,
   };
 
-  constructor(ctx?:RNOHContext) {
-    this.context = getContext(this);
-    if(ctx) {
-      this.ctx = ctx
-    }
+  constructor(_ctx?: RNOHContext) {
+    _ctx && (this.ctx = _ctx);
     this.context = getContext(this);
     this.localDisplay = display.getDefaultDisplaySync();
     if (this.localDisplay) {
@@ -97,7 +94,8 @@ export default class CameraSession {
    * 初始化相机
    * @param surfaceId
    */
-  async initCamera(surfaceId: string, props: VisionCameraViewSpec.RawProps, mediaModel: camera.SceneMode): Promise<void> {
+  async initCamera(surfaceId: string, props: VisionCameraViewSpec.RawProps,
+    mediaModel: camera.SceneMode): Promise<void> {
     this.preSurfaceId = surfaceId;
     Logger.info(TAG, `initCamera surfaceId:${surfaceId}`);
     this.mediaModel = mediaModel
@@ -305,12 +303,12 @@ export default class CameraSession {
     Logger.info(TAG, `recordPrepared videoBitRate: ${videoBitRate * 1_000_000}`)
     let rateRange = this.videoProfile.frameRateRange;
     let fps = props.fps
-    if(rateRange && fps){
+    if (rateRange && fps) {
       Logger.info(TAG, `recordPrepared rateRange, min:${rateRange.min}, max:${rateRange.max}}`);
-      if (rateRange.min<= fps && rateRange.max>= fps ){
+      if (rateRange.min <= fps && rateRange.max >= fps) {
         Logger.info(TAG, `recordPrepared rateRange, props fps:${fps}}`);
-      }else{
-        this.ctx.rnInstance.emitDeviceEvent('onError', new CameraCaptureError('capture/unknown',
+      } else {
+        this.ctx && this.ctx.rnInstance.emitDeviceEvent('onError', new CameraCaptureError('capture/unknown',
           `FPS should be in (${rateRange.min}-${rateRange.max})`));
         return;
       }
@@ -328,7 +326,7 @@ export default class CameraSession {
       videoFrameWidth: this.videoSize.width,
       videoFrameHeight: this.videoSize.height,
       videoFrameRate: fps ? fps : 30,
-      isHdr: props.videoHdr?props.videoHdr:false
+      isHdr: props.videoHdr ? props.videoHdr : false
     };
     let videoConfigProfile: media.AVRecorderProfile = this.hasAudio ? {
       ...audioConfig, ...videoConfig
@@ -661,6 +659,7 @@ export default class CameraSession {
     });
   }
 
+
   /**
    * 参数配置
    */
@@ -708,7 +707,7 @@ export default class CameraSession {
       }
     }
   }
-  
+
 
   /**
    * 转换为鸿蒙Point坐标
@@ -784,6 +783,7 @@ export default class CameraSession {
     } catch (error) {
       if (error.code === '3301100') {
         Logger.error(TAG, `the switch for the location function is not turned on, error code: ${error?.code}.`);
+        this.ctx &&
         this.ctx.rnInstance.emitDeviceEvent('onError', new CameraCaptureError('capture/location-not-turned-on',
           'the switch for the location function is not turned on.'));
       }
@@ -807,10 +807,10 @@ export default class CameraSession {
       if (options.flash === 'on' && this.photoSession?.isFlashModeSupported(camera.FlashMode.FLASH_MODE_OPEN)) {
         this.photoSession?.setFlashMode(camera.FlashMode.FLASH_MODE_OPEN);
       } else if (options.flash === 'off' &&
-        this.photoSession?.isFlashModeSupported(camera.FlashMode.FLASH_MODE_CLOSE)) {
+      this.photoSession?.isFlashModeSupported(camera.FlashMode.FLASH_MODE_CLOSE)) {
         this.photoSession?.setFlashMode(camera.FlashMode.FLASH_MODE_CLOSE);
       } else if (options.flash === 'auto' &&
-        this.photoSession?.isFlashModeSupported(camera.FlashMode.FLASH_MODE_AUTO)) {
+      this.photoSession?.isFlashModeSupported(camera.FlashMode.FLASH_MODE_AUTO)) {
         this.photoSession?.setFlashMode(camera.FlashMode.FLASH_MODE_AUTO);
       }
     }
@@ -849,7 +849,7 @@ export default class CameraSession {
     let predicates: dataSharePredicates.DataSharePredicates = new dataSharePredicates.DataSharePredicates();
     let fetchOption: PhotoAccessHelper.FetchOptions = {
       fetchColumns: [PhotoAccessHelper.PhotoKeys.URI, PhotoAccessHelper.PhotoKeys.PHOTO_TYPE,
-      PhotoAccessHelper.PhotoKeys.SIZE, PhotoAccessHelper.PhotoKeys.DATE_ADDED],
+        PhotoAccessHelper.PhotoKeys.SIZE, PhotoAccessHelper.PhotoKeys.DATE_ADDED],
       predicates: predicates
     };
     let asset: PhotoAccessHelper.PhotoAsset;
@@ -1052,7 +1052,8 @@ export default class CameraSession {
         cameraDeviceFormats.push(cameraDeviceFormat);
       }
       Logger.info(TAG, `convertCameraDeviceInfo initVideoSession end ${cameraDevice.cameraId}`);
-      let supportedVideoStabilizationMode: Array<VideoStabilizationMode> = this.getSupportedVideoStabilizationMode(this.videoSession);
+      let supportedVideoStabilizationMode: Array<VideoStabilizationMode> =
+        this.getSupportedVideoStabilizationMode(this.videoSession);
       for (const vProfile of capability.videoProfiles) {
         let cameraDeviceFormat = {} as CameraDeviceFormat;
         cameraDeviceFormat.videoHeight = vProfile.size.height;
@@ -1153,18 +1154,9 @@ export default class CameraSession {
   async startRecording(options: RecordVideoOptions, props: VisionCameraViewSpec.RawProps) {
     Logger.info(TAG,
       `startRecording.state:${this.avRecorder.state}, videoCodeC:${options.videoCodec}, this:${this.videoCodeC}`);
-    if (this.avRecorder.state === 'prepared' || this.avRecorder.state === 'idle' || this.avRecorder.state === 'released') {
-
-      if (options.videoCodec && options.videoCodec !== this.videoCodeC) {
-        this.videoCodeC = options.videoCodec
-        await this.avRecorder.release();
-        Logger.info(TAG, `startRecording.changeCodeC`);
-      }
-
-      if (this.avRecorder.state === 'released') {
-        this.avRecorder = await media.createAVRecorder();
-      }
-
+    if (this.avRecorder.state === 'prepared' || this.avRecorder.state === 'idle' ||
+      this.avRecorder.state === 'released') {
+      this.avRecorder = await media.createAVRecorder();
       if (this.avRecorder.state === 'idle' || this.avRecorder.state === 'released') {
         Logger.info(TAG, `startRecording.state: again recordPrepared`);
         // 重新 prepared
@@ -1193,13 +1185,13 @@ export default class CameraSession {
       } catch (error) {
         let err = error as BusinessError;
         // options.onRecordingError(new CameraCaptureError('capture/recording-in-progress', 'Failed to start recording.'))
-        this.ctx.rnInstance.emitDeviceEvent('onRecordingError',
+        this.ctx && this.ctx.rnInstance.emitDeviceEvent('onRecordingError',
           new CameraCaptureError('capture/recording-in-progress', 'Failed to start recording.'));
       }
       this.videoOutput.start((err: BusinessError) => {
         if (err) {
           // options.onRecordingError(new CameraCaptureError('capture/recording-in-progress', 'Failed to start recording.'))
-          this.ctx.rnInstance.emitDeviceEvent('onRecordingError',
+          this.ctx && this.ctx.rnInstance.emitDeviceEvent('onRecordingError',
             new CameraCaptureError('capture/recording-in-progress', 'Failed to start recording.'));
           return;
         }
@@ -1239,16 +1231,15 @@ export default class CameraSession {
       }
       let avMetadata: media.AVMetadata = await avMetadataExtractor.fetchMetadata()
       let duration: number = parseInt(avMetadata.duration) / 1000
-      fs.closeSync(this.videoFile);
-
-      const videoResult = {
+      Logger.info(TAG, `stopRecording.duration${duration}`);
+      this.ctx && this.ctx.rnInstance.emitDeviceEvent('onRecordingFinished', {
         height: parseInt(avMetadata.videoHeight),
         width: parseInt(avMetadata.videoWidth),
         path: this.videoUri,
         duration: Math.floor(duration)
-      }
-      Logger.info(TAG, `stopRecording.end.state :${this.avRecorder.state}, videoResult:${JSON.stringify(videoResult)}`);
-      return videoResult
+      });
+      fs.closeSync(this.videoFile);
+      Logger.info(TAG, `stopRecording.state end:${this.avRecorder.state}`);
     }
   }
 

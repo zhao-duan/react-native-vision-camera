@@ -1,7 +1,7 @@
 import camera from '@ohos.multimedia.camera';
 import { RNComponentContext, RNViewBase } from '@rnoh/react-native-openharmony';
-import { BusinessError } from '@ohos.base';
 import Logger from './utils/Logger';
+import { CameraRuntimeError, UnknownError } from './types/CameraError';
 import PermissionUtils from './utils/PermissionUtils';
 import CameraSession from './service/CameraSession';
 import {
@@ -10,6 +10,7 @@ import {
   PhotoFile,
   Point,
   ScanRect,
+  ScanResult,
   TakePhotoOptions
 } from './core/CameraConfig';
 import { display } from '@kit.ArkUI';
@@ -79,8 +80,8 @@ export struct VisionCameraView {
     this.localDisplayWidth = typeof props.width === 'number' ? vp2px(props.width) : this.localDisplay?.width;
     this.localDisplayHeight = typeof props.height === 'number' ? vp2px(props.height) : this.localDisplay?.height;
     this.enableZoomGesture = props.enableZoomGesture;
-    Logger.info(TAG, `descriptorBase.rawProps: ${JSON.stringify(props)}`)
-    Logger.info(TAG, `descriptorWrapper: ${JSON.stringify(this.descriptorWrapper)}`)
+    Logger.info(TAG, `descriptorBase.rawProps: ${JSON.stringify(props)}`);
+    Logger.info(TAG, `descriptorWrapper: ${JSON.stringify(this.descriptorWrapper)}`);
     this.registerCommandCallback();
 
     Logger.info(TAG, `props.registerCommandCallback end`);
@@ -220,7 +221,7 @@ export struct VisionCameraView {
     if (props.isActive !== undefined && this.prevProps?.isActive !== props.isActive) {
       Logger.info(TAG, `updateProps, activeChange: ${props.isActive}`);
       this.cameraSession.activeChange(props.isActive);
-      if(props.isActive) {
+      if (props.isActive) {
         Logger.info(TAG, `emitDeviceEvent, onCameraStarted`);
         this.ctx.rnInstance.emitDeviceEvent('onCameraStarted', {});
       } else {
@@ -232,7 +233,8 @@ export struct VisionCameraView {
       Logger.info(TAG, `updateProps, audioChange: ${props.audio}`);
       this.cameraSession.setAudio(props.audio);
     }
-    if (props.videoStabilizationMode !== undefined && this.prevProps?.videoStabilizationMode !== props.videoStabilizationMode) {
+    if (props.videoStabilizationMode !== undefined &&
+      this.prevProps?.videoStabilizationMode !== props.videoStabilizationMode) {
       Logger.info(TAG, `updateProps, videoStabilizationModeChange: ${props.videoStabilizationMode}`);
       this.cameraSession.setVideoStabilizationMode(props.videoStabilizationMode);
     }
@@ -391,23 +393,32 @@ export struct VisionCameraView {
     Logger.info(TAG, `emitDeviceEvent onInitialized end`)
   }
 
-  onError() {
+  onError(cameraError: CameraRuntimeError) {
     Logger.info(TAG, `emitDeviceEvent onError`)
-    this.ctx.rnInstance.emitDeviceEvent('onError', { error: 'test' });
+    this.ctx.rnInstance.emitDeviceEvent('onError', cameraError);
   }
 
   async scanStart(isFirst?: boolean) {
     clearTimeout(this.timer)
-    const scanResult = await this.scanSession.scanStart(this.surfaceId, this.localDisplay, isFirst);
+    let scanResult: ScanResult | undefined = undefined;
+    try {
+      scanResult = await this.scanSession.scanStart(this.surfaceId,
+        { width: this.localDisplayWidth, height: this.localDisplayHeight }, isFirst);
+    } catch (error) {
+      if (error.code === '1000500001') {
+        this.onError(new CameraRuntimeError('unknown/unknown', 'codeScanner preview size not support.'))
+      }
+    }
     if (scanResult) {
       this.ctx.rnInstance.emitDeviceEvent('onCodeScanned', scanResult);
       Logger.info(TAG, `get scan result: ${JSON.stringify(scanResult)}`)
 
       const isActive = this.descriptorWrapper['rawProps'].isActive;
-      if(isActive){
+      if (isActive) {
         this.scanStart();
       }
     }
+
   }
 
   /**
@@ -487,9 +498,8 @@ export struct VisionCameraView {
   /**
    * 停止录制
    */
-  async stopRecording() {
-    const result = await this.cameraSession.stopRecording();
-    this.ctx.rnInstance.emitDeviceEvent('onRecordingFinished', result);
+  stopRecording() {
+    this.cameraSession.stopRecording()
   }
 
   /**

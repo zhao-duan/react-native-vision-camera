@@ -10,10 +10,9 @@ class JSI_EXPORT VisionCameraViewEventEmitter : public ViewEventEmitter {
 public:
     using ViewEventEmitter::ViewEventEmitter;
 
-    struct OnInitialized{};
+    struct OnInitialized {};
 
     void onInitialized(OnInitialized value) const;
-
 };
 
 } // namespace react

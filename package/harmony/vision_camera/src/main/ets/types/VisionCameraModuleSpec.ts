@@ -6,20 +6,20 @@ export namespace VisionCameraModuleSpec {
 
   export interface Spec {
     getAvailableCameraDevices(): unknown[];
-  
+
     addCameraDevicesChangedListener(listener: (newDevices: unknown[]) => void): Object;
-  
+
     getCameraPermissionStatus(): string;
-  
+
     requestCameraPermission(): Promise<string>;
-  
+
     getMicrophonePermissionStatus(): string;
-  
+
     requestMicrophonePermission(): Promise<string>;
-  
+
     getLocationPermissionStatus(): string;
-  
+
     requestLocationPermission(): Promise<string>;
-  
+
   }
 }

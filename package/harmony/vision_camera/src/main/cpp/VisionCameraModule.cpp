@@ -6,7 +6,8 @@
 namespace rnoh {
 using namespace facebook;
 
-VisionCameraModule::VisionCameraModule(const ArkTSTurboModule::Context ctx, const std::string name) : ArkTSTurboModule(ctx, name) {
+VisionCameraModule::VisionCameraModule(const ArkTSTurboModule::Context ctx, const std::string name)
+    : ArkTSTurboModule(ctx, name) {
     methodMap_ = {
         ARK_METHOD_METADATA(getAvailableCameraDevices, 0),
         ARK_METHOD_METADATA(addCameraDevicesChangedListener, 1),

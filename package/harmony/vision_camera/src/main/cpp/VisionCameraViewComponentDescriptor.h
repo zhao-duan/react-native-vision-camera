@@ -14,21 +14,19 @@ namespace react {
 extern const char VisionCameraViewComponentName[] = "VisionCameraView";
 
 class VisionCameraViewProps : public ViewProps {
-  public:
+public:
     VisionCameraViewProps() = default;
 
-    VisionCameraViewProps(const PropsParserContext &context, const VisionCameraViewProps &sourceProps, const RawProps &rawProps)
+    VisionCameraViewProps(const PropsParserContext &context, const VisionCameraViewProps &sourceProps,
+                          const RawProps &rawProps)
         : ViewProps(context, sourceProps, rawProps) {}
 };
 
-using VisionCameraViewShadowNode = ConcreteViewShadowNode<
-    VisionCameraViewComponentName,
-    VisionCameraViewProps,
-    VisionCameraViewEventEmitter>;
+using VisionCameraViewShadowNode =
+    ConcreteViewShadowNode<VisionCameraViewComponentName, VisionCameraViewProps, VisionCameraViewEventEmitter>;
 
-class VisionCameraViewComponentDescriptor final
-    : public ConcreteComponentDescriptor<VisionCameraViewShadowNode> {
-  public:
+class VisionCameraViewComponentDescriptor final : public ConcreteComponentDescriptor<VisionCameraViewShadowNode> {
+public:
     VisionCameraViewComponentDescriptor(ComponentDescriptorParameters const &parameters)
         : ConcreteComponentDescriptor(parameters) {}
 };

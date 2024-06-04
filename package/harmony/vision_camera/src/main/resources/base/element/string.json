@@ -1,40 +1,40 @@
 {
-    "string": [
-      {
-        "name": "module_desc",
-        "value": "module description"
-      },
-      {
-        "name": "EntryAbility_desc",
-        "value": "description"
-      },
-      {
-        "name": "EntryAbility_label",
-        "value": "RN Tester"
-      },
-      {
-        "name": "camera_reason",
-        "value": "使用相机"
-      },
-      {
-        "name": "location_reason",
-        "value": "获取当前位置"
-      },
-      {
-        "name": "write_media",
-        "value": "输出媒体文件"
-      },
-      {
-        "name": "read_media",
-        "value": "读取媒体文件"
-      },
-      {
-        "name": "media_location_reason",
-        "value": "获取媒体文件位置信息"
-      },
-      {
-        "name": "microphone_reason",
-        "value": "使用麦克风"
-      }
-    ]
-  }
+  "string": [
+    {
+      "name": "module_desc",
+      "value": "module description"
+    },
+    {
+      "name": "EntryAbility_desc",
+      "value": "description"
+    },
+    {
+      "name": "EntryAbility_label",
+      "value": "RN Tester"
+    },
+    {
+      "name": "camera_reason",
+      "value": "使用相机"
+    },
+    {
+      "name": "location_reason",
+      "value": "获取当前位置"
+    },
+    {
+      "name": "write_media",
+      "value": "输出媒体文件"
+    },
+    {
+      "name": "read_media",
+      "value": "读取媒体文件"
+    },
+    {
+      "name": "media_location_reason",
+      "value": "获取媒体文件位置信息"
+    },
+    {
+      "name": "microphone_reason",
+      "value": "使用麦克风"
+    }
+  ]
+}
