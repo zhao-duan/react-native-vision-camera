@@ -596,6 +596,9 @@ export default class CameraSession {
       if (this.videoSession) {
         await this.videoSession.release();
       }
+      if (this.videoFile && this.videoFile.fd) {
+        fs.closeSync(this.videoFile);
+      }
       if (this.avRecorder) {
         await this.avRecorder.release();
       }
@@ -784,8 +787,8 @@ export default class CameraSession {
       if (error.code === '3301100') {
         Logger.error(TAG, `the switch for the location function is not turned on, error code: ${error?.code}.`);
         this.ctx &&
-        this.ctx.rnInstance.emitDeviceEvent('onError', new CameraCaptureError('capture/location-not-turned-on',
-          'the switch for the location function is not turned on.'));
+          this.ctx.rnInstance.emitDeviceEvent('onError', new CameraCaptureError('capture/location-not-turned-on',
+            'the switch for the location function is not turned on.'));
       }
       Logger.error(TAG, `getCurrentLocation error, error code is ${error?.code}.`);
       delete this.photoCaptureSetting.location;
@@ -807,10 +810,10 @@ export default class CameraSession {
       if (options.flash === 'on' && this.photoSession?.isFlashModeSupported(camera.FlashMode.FLASH_MODE_OPEN)) {
         this.photoSession?.setFlashMode(camera.FlashMode.FLASH_MODE_OPEN);
       } else if (options.flash === 'off' &&
-      this.photoSession?.isFlashModeSupported(camera.FlashMode.FLASH_MODE_CLOSE)) {
+        this.photoSession?.isFlashModeSupported(camera.FlashMode.FLASH_MODE_CLOSE)) {
         this.photoSession?.setFlashMode(camera.FlashMode.FLASH_MODE_CLOSE);
       } else if (options.flash === 'auto' &&
-      this.photoSession?.isFlashModeSupported(camera.FlashMode.FLASH_MODE_AUTO)) {
+        this.photoSession?.isFlashModeSupported(camera.FlashMode.FLASH_MODE_AUTO)) {
         this.photoSession?.setFlashMode(camera.FlashMode.FLASH_MODE_AUTO);
       }
     }
@@ -849,7 +852,7 @@ export default class CameraSession {
     let predicates: dataSharePredicates.DataSharePredicates = new dataSharePredicates.DataSharePredicates();
     let fetchOption: PhotoAccessHelper.FetchOptions = {
       fetchColumns: [PhotoAccessHelper.PhotoKeys.URI, PhotoAccessHelper.PhotoKeys.PHOTO_TYPE,
-        PhotoAccessHelper.PhotoKeys.SIZE, PhotoAccessHelper.PhotoKeys.DATE_ADDED],
+      PhotoAccessHelper.PhotoKeys.SIZE, PhotoAccessHelper.PhotoKeys.DATE_ADDED],
       predicates: predicates
     };
     let asset: PhotoAccessHelper.PhotoAsset;
@@ -1172,10 +1175,10 @@ export default class CameraSession {
       }
       if (this.videoSession.hasFlash()) {
         if (options.flash === 'on' &&
-        this.videoSession?.isFlashModeSupported(camera.FlashMode.FLASH_MODE_ALWAYS_OPEN)) {
+          this.videoSession?.isFlashModeSupported(camera.FlashMode.FLASH_MODE_ALWAYS_OPEN)) {
           this.videoSession?.setFlashMode(camera.FlashMode.FLASH_MODE_ALWAYS_OPEN);
         } else if (options.flash === 'off' &&
-        this.videoSession?.isFlashModeSupported(camera.FlashMode.FLASH_MODE_CLOSE)) {
+          this.videoSession?.isFlashModeSupported(camera.FlashMode.FLASH_MODE_CLOSE)) {
           this.videoSession?.setFlashMode(camera.FlashMode.FLASH_MODE_CLOSE);
         }
       }
@@ -1221,7 +1224,7 @@ export default class CameraSession {
 
       if (this.videoSession.hasFlash() &&
         this.videoSession.getFlashMode() === camera.FlashMode.FLASH_MODE_ALWAYS_OPEN &&
-      this.videoSession?.isFlashModeSupported(camera.FlashMode.FLASH_MODE_CLOSE)) {
+        this.videoSession?.isFlashModeSupported(camera.FlashMode.FLASH_MODE_CLOSE)) {
         this.videoSession?.setFlashMode(camera.FlashMode.FLASH_MODE_CLOSE);
       }
 
