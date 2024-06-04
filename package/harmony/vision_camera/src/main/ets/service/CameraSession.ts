@@ -326,7 +326,7 @@ export default class CameraSession {
       videoFrameWidth: this.videoSize.width,
       videoFrameHeight: this.videoSize.height,
       videoFrameRate: fps ? fps : 30,
-      isHdr: props.videoHdr ? props.videoHdr : false
+      isHdr: props.videoHdr && props.videoHdr ? props.videoHdr : false
     };
     let videoConfigProfile: media.AVRecorderProfile = this.hasAudio ? {
       ...audioConfig, ...videoConfig
@@ -799,10 +799,10 @@ export default class CameraSession {
   /**
    * 拍照
    */
-  async taskPhoto(options: TakePhotoOptions): Promise<PhotoFile> {
-    Logger.info(TAG, 'taskPhone to capture the photo ');
+  async takePhoto(options: TakePhotoOptions): Promise<PhotoFile> {
+    Logger.info(TAG, 'takePhoto to capture the photo ');
     if (this.takingPhoto) {
-      Logger.error(TAG, 'taskPhone：Please do not repeat the operation while taking a photo ');
+      Logger.error(TAG, 'takePhoto：Please do not repeat the operation while taking a photo ');
       return;
     }
     this.takingPhoto = true;
@@ -835,7 +835,7 @@ export default class CameraSession {
     photoFile.path = this.photoPath;
     photoFile.isRawPhoto = false;
     photoFile.thumbnail = thumbnail;
-    Logger.info(TAG, `taskPhoto photoFile:${JSON.stringify(photoFile)}`);
+    Logger.info(TAG, `takePhoto photoFile:${JSON.stringify(photoFile)}`);
 
     this.takingPhoto = false;
     this.photoPath = '';

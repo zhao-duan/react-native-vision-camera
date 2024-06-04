@@ -94,19 +94,15 @@ export default class ScanSession {
           right: data.scanCodeRect?.right || 0,
           bottom: data.scanCodeRect?.bottom || 0
         }
-        const codeW = rect.right - rect.left
-        const codeH = rect.bottom - rect.top
 
-        const layout = {
-          width: this.ScanFrame.width,
-          height: this.ScanFrame.height,
-        }
-        const scanFrame = this.ScanFrame;
+        const codeW = rect.right - rect.left;
+        const codeH = rect.bottom - rect.top;
+
         const codeFrame: Frame = {
-          width: codeW / (layout.height / scanFrame.width),
-          height: codeH / (layout.width / scanFrame.height),
-          x: rect.left / (layout.width / scanFrame.height),
-          y: rect.top / (layout.height / scanFrame.width)
+          width: codeW,
+          height: codeH,
+          x: rect.left,
+          y: rect.top
         }
         const corners: Point[] = [{
           x: rect.left, y: rect.top

@@ -332,7 +332,7 @@ export struct VisionCameraView {
             if (this.currentProps.photo) {
               Logger.debug(TAG, `registerCommandCallback: takePhoto,  ${JSON.stringify(args)}`)
               const options = args[0] as TakePhotoOptions;
-              this.taskPhoto(options);
+              this.takePhoto(options);
             } else {
               Logger.info(TAG, `props photo error, photo:${JSON.stringify(this.currentProps.photo)}`);
             }
@@ -424,9 +424,9 @@ export struct VisionCameraView {
   /**
    * 拍照
    */
-  async taskPhoto(options: TakePhotoOptions): Promise<PhotoFile> {
+  async takePhoto(options: TakePhotoOptions): Promise<PhotoFile> {
     this.ctx.rnInstance.emitDeviceEvent('onShutter', { type: 'photo' });
-    const photoFile = await this.cameraSession.taskPhoto(options);
+    const photoFile = await this.cameraSession.takePhoto(options);
     this.ctx.rnInstance.emitDeviceEvent('onTaskPhoto', photoFile);
     return photoFile;
   }
