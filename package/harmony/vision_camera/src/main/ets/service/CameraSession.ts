@@ -1,3 +1,26 @@
+/*
+ * MIT License
+ *
+ * Copyright (C) Huawei Technologies Co.,Ltd. 2024. All rights reserved.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 import camera from '@ohos.multimedia.camera';
 import Logger from '../utils/Logger';
 import { PhotoFile, Point, TakePhotoOptions } from '../core/CameraConfig';
@@ -12,7 +35,7 @@ import PhotoAccessHelper from '@ohos.file.photoAccessHelper';
 import { display } from '@kit.ArkUI';
 import { dataSharePredicates } from '@kit.ArkData';
 import { RecordVideoOptions } from '../types/VideoFile';
-import { CameraCaptureError } from '../types/CameraError';
+import { CameraCaptureError, CameraRuntimeError } from '../types/CameraError';
 import { RNOHContext } from '@rnoh/react-native-openharmony/ts';
 import geoLocationManager from '@ohos.geoLocationManager';
 import type { VisionCameraViewSpec } from '../types/VisionCameraViewSpec';
@@ -197,7 +220,7 @@ export default class CameraSession {
 
     Logger.info(TAG, `initVideoSession videoProfiles: ${JSON.stringify(this.videoProfile)}`);
     this.videoSession = this.cameraManager?.createSession(camera.SceneMode.NORMAL_VIDEO);
-    Logger.info(TAG, `initVideoSession videoProfiles: ${this.videoSession}`);
+    Logger.info(TAG, `initVideoSession videoSession: ${this.videoSession}`);
     this.videoSession.beginConfig();
     Logger.info(TAG, `initVideoSession beginConfig`);
     this.videoSession.addInput(this.cameraInput);
@@ -294,6 +317,7 @@ export default class CameraSession {
    * 录制准备
    */
   async recordPrepared(options: RecordVideoOptions, props: VisionCameraViewSpec.RawProps) {
+    Logger.info(TAG, `recordPrepared options: ${JSON.stringify(options)}`)
     let videoBitRate: number = 1
     if (typeof options.videoBitRate === 'number') {
       videoBitRate = options.videoBitRate
@@ -301,18 +325,7 @@ export default class CameraSession {
       videoBitRate = this.getBitRateMultiplier(options.videoBitRate)
     }
     Logger.info(TAG, `recordPrepared videoBitRate: ${videoBitRate * 1_000_000}`)
-    let rateRange = this.videoProfile.frameRateRange;
-    let fps = props.fps
-    if (rateRange && fps) {
-      Logger.info(TAG, `recordPrepared rateRange, min:${rateRange.min}, max:${rateRange.max}}`);
-      if (rateRange.min <= fps && rateRange.max >= fps) {
-        Logger.info(TAG, `recordPrepared rateRange, props fps:${fps}}`);
-      } else {
-        this.ctx && this.ctx.rnInstance.emitDeviceEvent('onError', new CameraCaptureError('capture/unknown',
-          `FPS should be in (${rateRange.min}-${rateRange.max})`));
-        return;
-      }
-    }
+
     let audioConfig = {
       audioChannels: 2,
       audioCodec: media.CodecMimeType.AUDIO_AAC,
@@ -325,8 +338,8 @@ export default class CameraSession {
       videoCodec: options.videoCodec === 'h265' ? media.CodecMimeType.VIDEO_HEVC : media.CodecMimeType.VIDEO_AVC,
       videoFrameWidth: this.videoSize.width,
       videoFrameHeight: this.videoSize.height,
-      videoFrameRate: fps ? fps : 30,
-      isHdr: props.videoHdr && props.videoHdr ? props.videoHdr : false
+      videoFrameRate: props.fps ? props.fps : 30,
+      isHdr: props.videoHdr ? props.videoHdr : false
     };
     let videoConfigProfile: media.AVRecorderProfile = this.hasAudio ? {
       ...audioConfig, ...videoConfig
@@ -336,6 +349,8 @@ export default class CameraSession {
       title: Date.now().toString()
     };
     let photoAccessHelper: PhotoAccessHelper.PhotoAccessHelper = PhotoAccessHelper.getPhotoAccessHelper(this.context);
+
+    Logger.info(TAG, `recordPrepared fileType: ${options.fileType}`);
     this.videoUri =
       await photoAccessHelper.createAsset(PhotoAccessHelper.PhotoType.VIDEO, options.fileType || 'mp4', vOptions);
     Logger.info(TAG, `recordPrepared videoUri: ${this.videoUri}`);
@@ -486,24 +501,6 @@ export default class CameraSession {
   //设置手电筒模式
   setTorch(mode: string): void {
     Logger.info(TAG, `setTorch: ${mode}`)
-    /*    try {
-          const TORCH_MODE = {
-            'on': camera.TorchMode.ON,
-            'off': camera.TorchMode.OFF
-          };
-          let torchMode: number = TORCH_MODE[mode];
-          const isSupport: boolean = this.cameraManager?.isTorchModeSupported(torchMode);
-          Logger.info(TAG, `isSupport is :${isSupport}.`);
-          if (torchMode === undefined || !isSupport) {
-            Logger.info(TAG, `mode:${mode} is not supported.`);
-            return;
-          }
-          Logger.info(TAG, `mode is :${mode}. torchMode is :${torchMode}`);
-          this.cameraManager?.setTorchMode(torchMode);
-          Logger.info(TAG, 'setTorchMode success.');
-        } catch (error) {
-          Logger.error(TAG, `The setTorchMode call failed. error code: ${error.code}.`);
-        }*/
     let cameraSession;
     if (this.photoSession) {
       cameraSession = this.photoSession;
@@ -1147,6 +1144,7 @@ export default class CameraSession {
   setAudio(isAudio) {
     if (isAudio !== undefined) {
       this.hasAudio = isAudio
+      Logger.info(TAG, `hasAudio${this.hasAudio}`);
     }
   }
 
@@ -1157,10 +1155,42 @@ export default class CameraSession {
   async startRecording(options: RecordVideoOptions, props: VisionCameraViewSpec.RawProps) {
     Logger.info(TAG,
       `startRecording.state:${this.avRecorder.state}, videoCodeC:${options.videoCodec}, this:${this.videoCodeC}`);
-    if (this.avRecorder.state === 'prepared' || this.avRecorder.state === 'released') {
+    if (options.fileType && options.fileType === 'mov') {
+      this.ctx &&
+      this.ctx.rnInstance.emitDeviceEvent('onRecordingError', new CameraCaptureError('capture/no-recording-in-progress',
+        'the system does not support the MOV format.'));
+      return;
+    }
+
+    let rateRange = this.videoProfile.frameRateRange;
+    if (rateRange && props.fps) {
+      Logger.info(TAG, `recordPrepared rateRange, min:${rateRange.min}, max:${rateRange.max}}`);
+      if (rateRange.min <= props.fps && rateRange.max >= props.fps) {
+        Logger.info(TAG, `recordPrepared rateRange, props fps:${props.fps}}`);
+      } else {
+        this.ctx && this.ctx.rnInstance.emitDeviceEvent('onRecordingError',
+          new CameraCaptureError('capture/no-recording-in-progress',
+            `FPS should be in (${rateRange.min}-${rateRange.max})`));
+        return;
+      }
+    }
+    if (props.videoHdr && options.videoCodec === 'h264') {
+      Logger.error(TAG, `recordPrepared rateRange, props videoHdr:${props.videoHdr},videoCodec:${options.videoCodec}`);
+      this.ctx &&
+      this.ctx.rnInstance.emitDeviceEvent('onRecordingError', new CameraCaptureError('capture/encoder-error',
+        'the encoding formats of videoHdr and videoCodec do not match.'));
+      return;
+    }
+
+    if (this.avRecorder.state === 'prepared' || this.avRecorder.state === 'idle' ||
+      this.avRecorder.state === 'released') {
+
+      if (this.avRecorder.state !== 'released') {
+        await this.avRecorder.release();
+        Logger.info(TAG, 'startRecording.idle.release');
+      }
       if (options.videoCodec && options.videoCodec !== this.videoCodeC) {
         this.videoCodeC = options.videoCodec;
-        await this.avRecorder.release();
         Logger.info(TAG, 'startRecording.changeCodeC');
       }
       if (this.avRecorder.state === 'released') {
@@ -1190,14 +1220,13 @@ export default class CameraSession {
       try {
         await this.avRecorder.start();
       } catch (error) {
-        let err = error as BusinessError;
-        // options.onRecordingError(new CameraCaptureError('capture/recording-in-progress', 'Failed to start recording.'))
+        Logger.error(TAG, 'startRecording catch Failed to start recording.' + JSON.stringify(error))
         this.ctx && this.ctx.rnInstance.emitDeviceEvent('onRecordingError',
           new CameraCaptureError('capture/recording-in-progress', 'Failed to start recording.'));
       }
       this.videoOutput.start((err: BusinessError) => {
         if (err) {
-          // options.onRecordingError(new CameraCaptureError('capture/recording-in-progress', 'Failed to start recording.'))
+          Logger.error(TAG, 'startRecording videoOutput.start Failed to start recording.' + JSON.stringify(err))
           this.ctx && this.ctx.rnInstance.emitDeviceEvent('onRecordingError',
             new CameraCaptureError('capture/recording-in-progress', 'Failed to start recording.'));
           return;
