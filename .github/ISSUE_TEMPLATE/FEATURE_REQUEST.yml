@@ -27,7 +27,7 @@ body:
       description: Explain if there are any alternatives/workarounds for the feature/enhancement.
       placeholder: I am currently manually applying the rotation to the image once it has been taken.
     validations:
-      required: true
+      required: false
   - type: checkboxes
     attributes:
       label: Additional information
