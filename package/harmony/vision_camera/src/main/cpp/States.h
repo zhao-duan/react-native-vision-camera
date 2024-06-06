@@ -21,6 +21,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+#ifndef STATES_H
+#define STATES_H
 #pragma once
 
 #ifdef ANDROID
@@ -45,3 +47,4 @@ public:
 
 } // namespace react
 } // namespace facebook
+#endif

@@ -1,4 +1,3 @@
-
 /*
  * MIT License
  *
@@ -22,6 +21,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+#ifndef VISION_CAMERA_MODULE_H
+#define VISION_CAMERA_MODULE_H
 #pragma once
 
 // This file was generated.
@@ -36,3 +37,4 @@ public:
 };
 
 } // namespace rnoh
+#endif

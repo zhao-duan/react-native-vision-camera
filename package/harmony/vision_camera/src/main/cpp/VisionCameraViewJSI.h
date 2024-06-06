@@ -21,6 +21,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+#ifndef VISION_CAMERA_VIEW_JSI_H
+#define VISION_CAMERA_VIEW_JSI_H
 #pragma once
 
 #include <ReactCommon/TurboModule.h>
@@ -29,3 +31,4 @@
 namespace facebook {
 namespace react {} // namespace react
 } // namespace facebook
+#endif

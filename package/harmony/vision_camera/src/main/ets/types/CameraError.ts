@@ -22,15 +22,13 @@
  * SOFTWARE.
  */
 export type PermissionError = 'permission/microphone-permission-denied' | 'permission/camera-permission-denied'
-
 export type ParameterError =
-| 'parameter/invalid-parameter'
+  | 'parameter/invalid-parameter'
   | 'parameter/unsupported-output'
   | 'parameter/unsupported-input'
   | 'parameter/invalid-combination'
-
 export type DeviceError =
-| 'device/configuration-error'
+  | 'device/configuration-error'
   | 'device/no-device'
   | 'device/invalid-device'
   | 'device/microphone-unavailable'
@@ -39,9 +37,8 @@ export type DeviceError =
   | 'device/focus-not-supported'
   | 'device/camera-not-available-on-simulator'
   | 'device/camera-already-in-use'
-
 export type FormatError =
-| 'format/invalid-fps'
+  | 'format/invalid-fps'
   | 'format/invalid-video-hdr'
   | 'format/photo-hdr-and-video-hdr-not-suppoted-simultaneously'
   | 'format/low-light-boost-not-supported-with-hdr'
@@ -49,22 +46,19 @@ export type FormatError =
   | 'format/incompatible-pixel-format-with-hdr-setting'
   | 'format/invalid-format'
   | 'format/format-required'
-
 export type SessionError =
-| 'session/camera-not-ready'
+  | 'session/camera-not-ready'
   | 'session/audio-in-use-by-other-app'
   | 'session/no-outputs'
   | 'session/audio-session-failed-to-activate'
   | 'session/hardware-cost-too-high'
   | 'session/invalid-output-configuration'
-
 export type CodeScannerError =
-| 'code-scanner/not-compatible-with-outputs'
+  | 'code-scanner/not-compatible-with-outputs'
   | 'code-scanner/code-type-not-supported'
   | 'code-scanner/cannot-load-model'
-
 export type CaptureError =
-| 'capture/recording-in-progress'
+  | 'capture/recording-in-progress'
   | 'capture/recording-canceled'
   | 'capture/no-recording-in-progress'
   | 'capture/file-io-error'
@@ -87,9 +81,8 @@ export type CaptureError =
   | 'capture/failed-writing-metadata'
   | 'capture/unknown'
   | 'capture/location-not-turned-on'
-
 export type SystemError =
-| 'system/camera-module-not-found'
+  | 'system/camera-module-not-found'
   | 'system/camera-is-restricted'
   | 'system/location-not-enabled'
   | 'system/no-camera-manager'
@@ -98,20 +91,26 @@ export type SystemError =
   | 'system/view-not-found'
   | 'system/max-cameras-in-use'
   | 'system/do-not-disturb-bug'
-
 export type UnknownError = 'unknown/unknown'
 
+
 export interface ErrorWithCause {
+
   code?: number
+
   domain?: string
+
   message: string
+
   details?: Record<string, unknown>
+
   stacktrace?: string
+
   cause?: ErrorWithCause
 }
 
 type CameraErrorCode =
-| PermissionError
+  | PermissionError
   | ParameterError
   | DeviceError
   | FormatError
@@ -119,6 +118,7 @@ type CameraErrorCode =
   | CaptureError
   | SystemError
   | UnknownError
+
 
 class CameraError<TCode extends CameraErrorCode> extends Error {
   private readonly _code: TCode
@@ -128,18 +128,15 @@ class CameraError<TCode extends CameraErrorCode> extends Error {
   public get code(): TCode {
     return this._code
   }
-
   public get message(): string {
     return this._message
   }
-
   public get cause(): Error | undefined {
     const c = this._cause
-    if (c == null) {
-      return undefined
-    }
+    if (c == null) return undefined
     return new Error(`[${c.code}]: ${c.message}`)
   }
+
 
   constructor(code: TCode, message: string, cause?: ErrorWithCause) {
     super(`[${code}]: ${message}${cause != null ? ` (Cause: ${cause.message})` : ''}`)
@@ -155,14 +152,17 @@ class CameraError<TCode extends CameraErrorCode> extends Error {
   }
 }
 
-export class CameraCaptureError extends CameraError<CaptureError> {
-}
-export class CameraRuntimeError
-  extends CameraError<PermissionError | ParameterError | DeviceError | FormatError | SessionError | SystemError | UnknownError> {
-}
+
+export class CameraCaptureError extends CameraError<CaptureError> {}
+
+
+export class CameraRuntimeError extends CameraError<
+  PermissionError | ParameterError | DeviceError | FormatError | SessionError | SystemError | UnknownError
+> {}
+
 
 export const isErrorWithCause = (error: unknown): error is ErrorWithCause =>
-typeof error === 'object' &&
+  typeof error === 'object' &&
   error != null &&
   // @ts-expect-error error is still unknown
   typeof error.message === 'string' &&
@@ -171,16 +171,3 @@ typeof error === 'object' &&
   // @ts-expect-error error is still unknown
   (isErrorWithCause(error.cause) || error.cause == null)
 
-const isCameraErrorJson = (error: unknown): error is {
-  code: string;
-  message: string;
-  cause?: ErrorWithCause
-} =>
-typeof error === 'object' &&
-  error != null &&
-  // @ts-expect-error error is still unknown
-  typeof error.code === 'string' &&
-  // @ts-expect-error error is still unknown
-  typeof error.message === 'string' &&
-  // @ts-expect-error error is still unknown
-  (typeof error.cause === 'object' || error.cause == null)

@@ -21,6 +21,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+#ifndef VISION_CAMERA_VIEW_JSIBINDER_H
+#define VISION_CAMERA_VIEW_JSIBINDER_H
 #pragma once
 
 // This file was generated.
@@ -70,3 +72,4 @@ protected:
     }
 };
 } // namespace rnoh
+#endif

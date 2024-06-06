@@ -195,15 +195,28 @@ export default class CameraSession {
     this.cameraInput.open();
     this.capability = this.cameraManager.getSupportedOutputCapability(currentDevice, camera.SceneMode.NORMAL_VIDEO);
     if (surfaceId && props.preview) {
-      this.previewProfile = this.capability.previewProfiles[this.capability.previewProfiles.length - 1];
+      this.previewProfile = this.capability.previewProfiles.find((profile: camera.Profile) => {
+        if(props.videoHdr) {
+          return profile.size.width === this.videoSize.width && profile.size.height === this.videoSize.height &&
+            profile.format === camera.CameraFormat.CAMERA_FORMAT_YCRCB_P010;
+        } else {
+          return profile.size.width === this.videoSize.width && profile.size.height === this.videoSize.height;
+        }
+      });
       Logger.info(TAG, `initVideoSession previewProfile ${JSON.stringify(this.previewProfile)})`);
+
       this.previewOutput = this.cameraManager.createPreviewOutput(this.previewProfile, surfaceId);
       Logger.info(TAG, `initVideoSession previewOutput ${this.previewOutput}`);
     }
 
     this.avRecorder = await media.createAVRecorder();
     this.videoProfile = this.capability.videoProfiles.find((profile: camera.VideoProfile) => {
-      return profile.size.width === this.videoSize.width && profile.size.height === this.videoSize.height;
+      if (props.videoHdr) {
+        return profile.size.width === this.videoSize.width && profile.size.height === this.videoSize.height &&
+          profile.format === camera.CameraFormat.CAMERA_FORMAT_YCRCB_P010;
+      } else {
+        return profile.size.width === this.videoSize.width && profile.size.height === this.videoSize.height;
+      }
     });
 
     Logger.info(TAG, `initVideoSession: income: no surfaceId`);
@@ -225,7 +238,7 @@ export default class CameraSession {
     Logger.info(TAG, `initVideoSession beginConfig`);
     this.videoSession.addInput(this.cameraInput);
     Logger.info(TAG, `initVideoSession cameraInput`);
-    if (surfaceId) {
+    if (surfaceId && this.previewOutput  && props.preview) {
       this.videoSession.addOutput(this.previewOutput);
       Logger.info(TAG, `initVideoSession previewOutput`);
     }
@@ -239,6 +252,11 @@ export default class CameraSession {
     } catch (error) {
       Logger.error(TAG, `initVideoSession commitConfig1 ${JSON.stringify(error)}`);
     }
+
+    if(!props.videoStabilizationMode) {
+      this.setVideoStabilizationMode('auto')
+    }
+
     Logger.info(TAG, `initVideoSession end`);
   }
 
@@ -261,7 +279,7 @@ export default class CameraSession {
     this.photoSession.beginConfig();
     this.photoSession.addInput(this.cameraInput);
     Logger.info(TAG, `initPhotoSession addInput`);
-    if (this.previewOutput) {
+    if (this.previewOutput && props.preview) {
       Logger.info(TAG, `initPhotoSession previewOutput`);
       this.photoSession.addOutput(this.previewOutput);
     }
@@ -274,6 +292,35 @@ export default class CameraSession {
       Logger.error(TAG, `initPhotoSession commitConfig error: ${JSON.stringify(error)}`);
     }
     Logger.info(TAG, `initPhotoSession commitConfig end`);
+  }
+
+  hdrChange(isHdr:boolean){
+    Logger.info(TAG, `hdrChange isHdr ${isHdr}`);
+    this.previewProfile = this.capability?.previewProfiles.find((profile: camera.VideoProfile) => {
+      if (isHdr) {
+        return profile.size.width === this.videoSize.width && profile.size.height === this.videoSize.height &&
+          profile.format === camera.CameraFormat.CAMERA_FORMAT_YCRCB_P010;
+      } else {
+        return profile.size.width === this.videoSize.width && profile.size.height === this.videoSize.height &&
+          profile.format === camera.CameraFormat.CAMERA_FORMAT_YUV_420_SP;
+      }
+    });
+
+    Logger.info(TAG, `hdrChange previewProfile ${JSON.stringify(this.previewProfile)})`);
+    let localPreviewOutput = this.cameraManager.createPreviewOutput(this.previewProfile, this.preSurfaceId);
+    Logger.info(TAG, `hdrChange createPreviewOutput localPreviewOutput`);
+    this.videoSession?.beginConfig();
+    if(this.previewOutput){
+      this.videoSession?.removeOutput(this.previewOutput);
+      Logger.info(TAG, `hdrChange previewOutput remove`);
+    }
+    this.previewOutput = localPreviewOutput;
+    this.videoSession?.addOutput(localPreviewOutput);
+    Logger.info(TAG, `hdrChange previewOutput add`);
+    this.videoSession?.commitConfig();
+    Logger.info(TAG, `hdrChange previewOutput addOutput end`);
+    this.videoSession?.start();
+    Logger.info(TAG, `hdrChange previewOutput addOutput start`);
   }
 
   async previewChange(preview: boolean): Promise<void> {
@@ -374,6 +421,7 @@ export default class CameraSession {
     await this.avRecorder.prepare(aVRecorderConfig);
     let videoSurfaceId = await this.avRecorder.getInputSurface();
     Logger.info(TAG, `recordPrepared videoSurfaceId: ${videoSurfaceId}`);
+    Logger.info(TAG, `recordPrepared videoProfile: ${JSON.stringify(this.videoProfile)}`);
     let videoOutput: camera.VideoOutput;
     try {
       videoOutput = this.cameraManager.createVideoOutput(this.videoProfile, videoSurfaceId);
@@ -526,9 +574,9 @@ export default class CameraSession {
     if (!this.videoSession) {
       return
     }
-    let videoMode = camera.VideoStabilizationMode.OFF
-    if (mode === 'auto') {
-      videoMode = camera.VideoStabilizationMode.AUTO
+    let videoMode = camera.VideoStabilizationMode.AUTO
+    if (mode === 'off') {
+      videoMode = camera.VideoStabilizationMode.OFF
     }
     if (mode === 'standard') {
       videoMode = camera.VideoStabilizationMode.LOW
@@ -539,7 +587,7 @@ export default class CameraSession {
     if (mode === 'cinematic-extended') {
       videoMode = camera.VideoStabilizationMode.HIGH
     }
-    Logger.info(TAG, `setVideoStabilizationMode: videoMode: ${videoMode}`)
+    Logger.info(TAG, `|: videoMode: ${videoMode}`)
     let isSupported: boolean = false;
     try {
       isSupported = this.videoSession.isVideoStabilizationModeSupported(videoMode);
@@ -658,7 +706,6 @@ export default class CameraSession {
       });
     });
   }
-
 
   /**
    * 参数配置
@@ -892,7 +939,6 @@ export default class CameraSession {
     })
   }
 
-
   /**
    * 获取可用设备
    */
@@ -908,94 +954,6 @@ export default class CameraSession {
     return camerasArray;
   }
 
-  async convertCameraDeviceInfo(): Promise<CameraDeviceInfo[]> {
-    if (!this.camerasArray) {
-      Logger.error(TAG, 'convertCameraDeviceInfo cameraDevices is null');
-    }
-    let cameraDevices = this.camerasArray
-    Logger.info(TAG, `convertCameraDeviceInfo.start`);
-
-    let cameraArray: Array<CameraDeviceInfo> = [];
-    for await (const cameraDevice of cameraDevices) {
-      Logger.info(TAG, `convertCameraDeviceInfo initVideoSession end ${cameraDevice.cameraId}`);
-      await this.initVideoSession(cameraDevice, undefined, {} as VisionCameraViewSpec.RawProps);
-      Logger.info(TAG, `convertCameraDeviceInfo initVideoSession end ${cameraDevice.cameraId}`);
-      let cameraInfo: CameraDeviceInfo = {} as CameraDeviceInfo;
-      cameraInfo.id = cameraDevice.cameraId;
-      cameraInfo.supportsFocus = this.focusSupport(this.videoSession);
-      Logger.info(TAG, `convertCameraDeviceInfo cameraId:${cameraInfo.id} supportsFocus: ${cameraInfo.supportsFocus}`);
-      if (cameraDevice.cameraType === camera.CameraType.CAMERA_TYPE_WIDE_ANGLE) {
-        cameraInfo.physicalDevices = [PhysicalCameraDeviceType.WIDE_ANGLE_CAMERA];
-      } else if (cameraDevice.cameraType === camera.CameraType.CAMERA_TYPE_ULTRA_WIDE) {
-        cameraInfo.physicalDevices = [PhysicalCameraDeviceType.ULTRA_WIDE_ANGLE_CAMERA];
-      } else {
-        Logger.info(TAG, `convertCameraDeviceInfo CameraType: ${cameraDevice.cameraType}`);
-      }
-      Logger.info(TAG,
-        `convertCameraDeviceInfo cameraId:${cameraInfo.id},cameraType:${cameraDevice.cameraType},physicalDevices:${JSON.stringify(cameraInfo.physicalDevices)}`);
-
-      if (cameraDevice.connectionType === camera.ConnectionType.CAMERA_CONNECTION_BUILT_IN) {
-        if (cameraDevice.cameraPosition === camera.CameraPosition.CAMERA_POSITION_BACK) {
-          cameraInfo.position = CameraPosition.BACK
-          Logger.info(TAG, `convertCameraDeviceInfo cameraId:${cameraInfo.id} : cameraType position BACK`);
-        } else if (cameraDevice.cameraPosition === camera.CameraPosition.CAMERA_POSITION_FRONT) {
-          cameraInfo.position = CameraPosition.FRONT
-          Logger.info(TAG, `convertCameraDeviceInfo cameraId:${cameraInfo.id} : cameraType position FRONT`);
-        } else {
-          Logger.info(TAG, `convertCameraDeviceInfo CameraPosition: ${cameraDevice.cameraPosition}`);
-        }
-      } else {
-        cameraInfo.position = CameraPosition.EXTERNAL
-        Logger.info(TAG, `convertCameraDeviceInfo cameraId:${cameraInfo.id} : cameraType position external`);
-      }
-      cameraInfo.hasFlash = this.cameraManager?.isTorchSupported();
-      cameraInfo.hasTorch = this.cameraManager?.isTorchModeSupported(camera.TorchMode.ON);
-      Logger.info(TAG,
-        `convertCameraDeviceInfo cameraId:${cameraInfo.id} : hasFlash:${cameraInfo.hasFlash}, hasTorch:${cameraInfo.hasTorch}`);
-      let zoomRatioRange: Array<number> = this.videoSession.getZoomRatioRange();
-      let biasRangeArray: Array<number> = this.videoSession.getExposureBiasRange();
-      // await this.cameraRelease();
-      if (zoomRatioRange) {
-        cameraInfo.minZoom = zoomRatioRange[0];
-        cameraInfo.maxZoom = zoomRatioRange[1];
-      }
-      if (biasRangeArray) {
-        cameraInfo.minExposure = biasRangeArray[0];
-        cameraInfo.maxExposure = biasRangeArray[1];
-      }
-      let cameraDeviceFormats: Array<CameraDeviceFormat> = [];
-      let capability =
-        this.cameraManager.getSupportedOutputCapability(cameraDevice, camera.SceneMode.NORMAL_VIDEO);
-      Logger.info(TAG,
-        `convertCameraDeviceInfo cameraId:${cameraInfo.id} : photoCapability:${JSON.stringify(capability.photoProfiles)}`);
-      for (const pProfile of capability.photoProfiles) {
-        let cameraDeviceFormat = {} as CameraDeviceFormat;
-        cameraDeviceFormat.photoHeight = pProfile.size.height;
-        cameraDeviceFormat.photoWidth = pProfile.size.width;
-        cameraDeviceFormats.push(cameraDeviceFormat);
-      }
-      Logger.info(TAG,
-        `convertCameraDeviceInfo cameraId:${cameraInfo.id} : videoCapability:${JSON.stringify(capability.videoProfiles)}`);
-      Logger.info(TAG, `initVideoSession end  cameraId:${cameraInfo.id}`);
-      for (const vProfile of capability.videoProfiles) {
-        let cameraDeviceFormat = {} as CameraDeviceFormat;
-        cameraDeviceFormat.videoHeight = vProfile.size.height;
-        cameraDeviceFormat.videoWidth = vProfile.size.width;
-        cameraDeviceFormat.minFps = vProfile.frameRateRange.min;
-        cameraDeviceFormat.maxFps = vProfile.frameRateRange.max;
-        cameraDeviceFormat.videoStabilizationModes = this.getSupportedVideoStabilizationMode(this.videoSession);
-        cameraDeviceFormats.push(cameraDeviceFormat);
-      }
-      Logger.info(TAG, `initVideoSession cameraDeviceFormat end`);
-      cameraInfo.formats = cameraDeviceFormats;
-      cameraArray.push(cameraInfo);
-      await this.cameraRelease();
-      Logger.info(TAG, `convertCameraDeviceInfo for end await  ${JSON.stringify(cameraDevices.map(e => e.cameraId))}`);
-    }
-    Logger.info(TAG, `convertCameraDeviceInfo end ${JSON.stringify(cameraArray)}`);
-    return cameraArray;
-  }
-
   convertCameraDevice(): CameraDeviceInfo[] {
     if (!this.camerasArray) {
       Logger.error(TAG, 'convertCameraDeviceInfo cameraDevices is null');
@@ -1007,30 +965,7 @@ export default class CameraSession {
     for (const cameraDevice of cameraDevices) {
       let cameraInfo: CameraDeviceInfo = {} as CameraDeviceInfo;
       cameraInfo.id = cameraDevice.cameraId;
-      if (cameraDevice.cameraType === camera.CameraType.CAMERA_TYPE_WIDE_ANGLE) {
-        cameraInfo.physicalDevices = [PhysicalCameraDeviceType.WIDE_ANGLE_CAMERA];
-      } else if (cameraDevice.cameraType === camera.CameraType.CAMERA_TYPE_ULTRA_WIDE) {
-        cameraInfo.physicalDevices = [PhysicalCameraDeviceType.ULTRA_WIDE_ANGLE_CAMERA];
-      } else {
-        Logger.info(TAG, `convertCameraDeviceInfo CameraType: ${cameraDevice.cameraType}`);
-      }
-      Logger.info(TAG,
-        `convertCameraDeviceInfo cameraId:${cameraInfo.id},cameraType:${cameraDevice.cameraType},physicalDevices:${JSON.stringify(cameraInfo.physicalDevices)}`);
-
-      if (cameraDevice.connectionType === camera.ConnectionType.CAMERA_CONNECTION_BUILT_IN) {
-        if (cameraDevice.cameraPosition === camera.CameraPosition.CAMERA_POSITION_BACK) {
-          cameraInfo.position = CameraPosition.BACK
-          Logger.info(TAG, `convertCameraDeviceInfo cameraId:${cameraInfo.id} : cameraType position BACK`);
-        } else if (cameraDevice.cameraPosition === camera.CameraPosition.CAMERA_POSITION_FRONT) {
-          cameraInfo.position = CameraPosition.FRONT
-          Logger.info(TAG, `convertCameraDeviceInfo cameraId:${cameraInfo.id} : cameraType position FRONT`);
-        } else {
-          Logger.info(TAG, `convertCameraDeviceInfo CameraPosition: ${cameraDevice.cameraPosition}`);
-        }
-      } else {
-        cameraInfo.position = CameraPosition.EXTERNAL
-        Logger.info(TAG, `convertCameraDeviceInfo cameraId:${cameraInfo.id} : cameraType position external`);
-      }
+      this.getDeviceTypeAndConnectType(cameraDevice, cameraInfo);
 
       cameraInfo.hasFlash = this.cameraManager?.isTorchSupported();
       cameraInfo.hasTorch = this.cameraManager?.isTorchModeSupported(camera.TorchMode.ON);
@@ -1063,28 +998,60 @@ export default class CameraSession {
         cameraDeviceFormat.videoStabilizationModes = supportedVideoStabilizationMode;
         cameraDeviceFormats.push(cameraDeviceFormat);
       }
-      this.initVideoSession(cameraDevice, undefined, {} as VisionCameraViewSpec.RawProps).then(() => {
-        Logger.info(TAG, `convertCameraDeviceInfo initVideoSession end ${cameraDevice.cameraId}`);
-        cameraInfo.supportsFocus = this.focusSupport(this.videoSession);
-        Logger.info(TAG,
-          `convertCameraDeviceInfo cameraId:${cameraInfo.id} supportsFocus: ${cameraInfo.supportsFocus}`);
-
-        let [minZoom, maxZoom]: number[] = this.videoSession.getZoomRatioRange();
-        let biasRangeArray: Array<number> = this.videoSession.getExposureBiasRange();
-        cameraInfo.minZoom = minZoom;
-        cameraInfo.maxZoom = maxZoom;
-        cameraInfo.minExposure = biasRangeArray[0];
-        cameraInfo.maxExposure = biasRangeArray[1];
-        Logger.info(TAG, `initVideoSession cameraDeviceFormat end`);
-        this.cameraRelease();
-        Logger.info(TAG,
-          `convertCameraDeviceInfo for end await  ${JSON.stringify(cameraDevices.map(e => e.cameraId))}`);
-      });
+      this.getVideoSessionParams(cameraDevice, cameraInfo, cameraDevices);
       cameraInfo.formats = cameraDeviceFormats;
       cameraArray.push(cameraInfo);
     }
     Logger.info(TAG, `convertCameraDeviceInfo end ${JSON.stringify(cameraArray)}`);
     return cameraArray;
+  }
+
+  private getDeviceTypeAndConnectType(cameraDevice: camera.CameraDevice, cameraInfo: CameraDeviceInfo) {
+    if (cameraDevice.cameraType === camera.CameraType.CAMERA_TYPE_WIDE_ANGLE) {
+      cameraInfo.physicalDevices = [PhysicalCameraDeviceType.WIDE_ANGLE_CAMERA];
+    } else if (cameraDevice.cameraType === camera.CameraType.CAMERA_TYPE_ULTRA_WIDE) {
+      cameraInfo.physicalDevices = [PhysicalCameraDeviceType.ULTRA_WIDE_ANGLE_CAMERA];
+    } else {
+      Logger.info(TAG, `convertCameraDeviceInfo CameraType: ${cameraDevice.cameraType}`);
+    }
+    Logger.info(TAG,
+      `convertCameraDeviceInfo cameraId:${cameraInfo.id},cameraType:${cameraDevice.cameraType},physicalDevices:${JSON.stringify(cameraInfo.physicalDevices)}`);
+
+    if (cameraDevice.connectionType === camera.ConnectionType.CAMERA_CONNECTION_BUILT_IN) {
+      if (cameraDevice.cameraPosition === camera.CameraPosition.CAMERA_POSITION_BACK) {
+        cameraInfo.position = CameraPosition.BACK;
+        Logger.info(TAG, `convertCameraDeviceInfo cameraId:${cameraInfo.id} : cameraType position BACK`);
+      } else if (cameraDevice.cameraPosition === camera.CameraPosition.CAMERA_POSITION_FRONT) {
+        cameraInfo.position = CameraPosition.FRONT;
+        Logger.info(TAG, `convertCameraDeviceInfo cameraId:${cameraInfo.id} : cameraType position FRONT`);
+      } else {
+        Logger.info(TAG, `convertCameraDeviceInfo CameraPosition: ${cameraDevice.cameraPosition}`);
+      }
+    } else {
+      cameraInfo.position = CameraPosition.EXTERNAL;
+      Logger.info(TAG, `convertCameraDeviceInfo cameraId:${cameraInfo.id} : cameraType position external`);
+    }
+  }
+
+  private getVideoSessionParams(cameraDevice: camera.CameraDevice, cameraInfo: CameraDeviceInfo,
+    cameraDevices: camera.CameraDevice[] | undefined) {
+    this.initVideoSession(cameraDevice, undefined, {} as VisionCameraViewSpec.RawProps).then(() => {
+      Logger.info(TAG, `convertCameraDeviceInfo initVideoSession end ${cameraDevice.cameraId}`);
+      cameraInfo.supportsFocus = this.focusSupport(this.videoSession);
+      Logger.info(TAG,
+        `convertCameraDeviceInfo cameraId:${cameraInfo.id} supportsFocus: ${cameraInfo.supportsFocus}`);
+
+      let [minZoom, maxZoom]: number[] = this.videoSession.getZoomRatioRange();
+      let biasRangeArray: Array<number> = this.videoSession.getExposureBiasRange();
+      cameraInfo.minZoom = minZoom;
+      cameraInfo.maxZoom = maxZoom;
+      cameraInfo.minExposure = biasRangeArray[0];
+      cameraInfo.maxExposure = biasRangeArray[1];
+      Logger.info(TAG, `initVideoSession cameraDeviceFormat end`);
+      this.cameraRelease();
+      Logger.info(TAG,
+        `convertCameraDeviceInfo for end await  ${JSON.stringify(cameraDevices.map(e => e.cameraId))}`);
+    });
   }
 
   initDeviceInfo(): CameraDeviceInfo[] {
@@ -1155,9 +1122,8 @@ export default class CameraSession {
   async startRecording(options: RecordVideoOptions, props: VisionCameraViewSpec.RawProps) {
     Logger.info(TAG,
       `startRecording.state:${this.avRecorder.state}, videoCodeC:${options.videoCodec}, this:${this.videoCodeC}`);
-    if (options.fileType && options.fileType === 'mov') {
-      this.ctx &&
-      this.ctx.rnInstance.emitDeviceEvent('onRecordingError', new CameraCaptureError('capture/no-recording-in-progress',
+    if(options.fileType && options.fileType === 'mov') {
+      this.ctx && this.ctx.rnInstance.emitDeviceEvent('onRecordingError', new CameraCaptureError('capture/no-recording-in-progress',
         'the system does not support the MOV format.'));
       return;
     }
@@ -1168,24 +1134,22 @@ export default class CameraSession {
       if (rateRange.min <= props.fps && rateRange.max >= props.fps) {
         Logger.info(TAG, `recordPrepared rateRange, props fps:${props.fps}}`);
       } else {
-        this.ctx && this.ctx.rnInstance.emitDeviceEvent('onRecordingError',
-          new CameraCaptureError('capture/no-recording-in-progress',
-            `FPS should be in (${rateRange.min}-${rateRange.max})`));
+        this.ctx && this.ctx.rnInstance.emitDeviceEvent('onRecordingError', new CameraCaptureError('capture/no-recording-in-progress',
+          `FPS should be in (${rateRange.min}-${rateRange.max})`));
         return;
       }
     }
-    if (props.videoHdr && options.videoCodec === 'h264') {
+    if(props.videoHdr && options.videoCodec === 'h264') {
       Logger.error(TAG, `recordPrepared rateRange, props videoHdr:${props.videoHdr},videoCodec:${options.videoCodec}`);
-      this.ctx &&
-      this.ctx.rnInstance.emitDeviceEvent('onRecordingError', new CameraCaptureError('capture/encoder-error',
+      this.ctx && this.ctx.rnInstance.emitDeviceEvent('onRecordingError', new CameraCaptureError('capture/encoder-error',
         'the encoding formats of videoHdr and videoCodec do not match.'));
       return;
     }
 
-    if (this.avRecorder.state === 'prepared' || this.avRecorder.state === 'idle' ||
-      this.avRecorder.state === 'released') {
 
-      if (this.avRecorder.state !== 'released') {
+    if (this.avRecorder.state === 'prepared' || this.avRecorder.state === 'idle' || this.avRecorder.state === 'released') {
+
+      if(this.avRecorder.state !== 'released') {
         await this.avRecorder.release();
         Logger.info(TAG, 'startRecording.idle.release');
       }
@@ -1216,6 +1180,9 @@ export default class CameraSession {
           this.videoSession?.setFlashMode(camera.FlashMode.FLASH_MODE_CLOSE);
         }
       }
+
+      const vsMode = this.videoSession.getActiveVideoStabilizationMode();
+      Logger.info(TAG, `startRecording.getActiveVideoStabilizationMode.vsMode:${vsMode}`);
 
       try {
         await this.avRecorder.start();

@@ -21,6 +21,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+#ifndef EVENT_EMITTERS_H
+#define EVENT_EMITTERS_H
 #pragma once
 
 #include <react/renderer/components/view/ViewEventEmitter.h>
@@ -40,3 +42,5 @@ public:
 
 } // namespace react
 } // namespace facebook
+#endif
+

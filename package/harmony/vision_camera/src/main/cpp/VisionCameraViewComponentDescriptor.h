@@ -1,4 +1,3 @@
-
 /*
  * MIT License
  *
@@ -22,6 +21,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+
+#ifndef VISION_CAMERA_VIEW_COMPONENT_DESCRIPTOR_H
+#define VISION_CAMERA_VIEW_COMPONENT_DESCRIPTOR_H
 #pragma once
 
 // This file was generated.
@@ -56,3 +58,4 @@ public:
 
 } // namespace react
 } // namespace facebook
+#endif

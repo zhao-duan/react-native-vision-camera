@@ -21,6 +21,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+#ifndef VISION_CAMERA_PACKAGE_H
+#define VISION_CAMERA_PACKAGE_H
 #include "RNOH/Package.h"
 #include "RNOH/ArkTSTurboModule.h"
 #include "./VisionCameraModule.h"
@@ -87,3 +89,5 @@ public:
 };
 
 } // namespace rnoh
+#endif
+
