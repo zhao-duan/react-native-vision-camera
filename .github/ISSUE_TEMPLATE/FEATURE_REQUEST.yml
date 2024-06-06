@@ -18,6 +18,7 @@ body:
       options:
         - iOS
         - Android
+        - Harmony
     validations:
       required: true
   - type: textarea
