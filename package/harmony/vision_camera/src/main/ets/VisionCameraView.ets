@@ -256,11 +256,6 @@ export struct VisionCameraView {
       Logger.info(TAG, `updateProps, audioChange: ${props.audio}`);
       this.cameraSession.setAudio(props.audio);
     }
-    if (props.videoStabilizationMode !== undefined &&
-      this.prevProps?.videoStabilizationMode !== props.videoStabilizationMode) {
-      Logger.info(TAG, `updateProps, videoStabilizationModeChange: ${props.videoStabilizationMode}`);
-      this.cameraSession.setVideoStabilizationMode(props.videoStabilizationMode);
-    }
     if (props.preview !== undefined && this.prevProps?.preview !== props.preview) {
       Logger.info(TAG, `updateProps, previewChange: ${props.preview}`);
       this.cameraSession.previewChange(props.preview);
@@ -292,9 +287,14 @@ export struct VisionCameraView {
     if (props.androidPreviewViewType && this.prevProps?.androidPreviewViewType !== props.androidPreviewViewType) {
       this.androidPreviewViewType = previewViewType[`${props.androidPreviewViewType}`];
     }
-    if (props.videoHdr && this.prevProps?.videoHdr !== props.videoHdr) {
+    if (props.videoHdr !== undefined && this.prevProps?.videoHdr !== props.videoHdr) {
       Logger.info(TAG, `videoHdr update:${props.videoHdr}.`)
-      this.cameraSession.hdrChange(props.videoHdr);
+      this.cameraSession.hdrChange(props);
+    }
+    if (props.videoStabilizationMode !== undefined &&
+      this.prevProps?.videoStabilizationMode !== props.videoStabilizationMode) {
+      Logger.info(TAG, `updateProps, videoStabilizationModeChange: ${props.videoStabilizationMode}`);
+      this.cameraSession.setVideoStabilizationMode(props.videoStabilizationMode);
     }
     this.cameraSession.setResizeMode(props.resizeMode, this.localDisplay?.width, this.localDisplay?.height,
       (width, height) => {

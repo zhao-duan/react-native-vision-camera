@@ -29,13 +29,13 @@ import { Context } from '@kit.AbilityKit';
 import image from '@ohos.multimedia.image';
 import { BusinessError } from '@ohos.base';
 import fs from '@ohos.file.fs';
-import { CameraPosition, PhysicalCameraDeviceType, VideoStabilizationMode } from '../core/CameraEnumBox';
+import { CameraPosition, PhysicalCameraDeviceType, VideoStabilizationMode, Orientation } from '../core/CameraEnumBox';
 import { CameraDeviceFormat, CameraDeviceInfo } from '../core/CameraDeviceInfo';
 import PhotoAccessHelper from '@ohos.file.photoAccessHelper';
 import { display } from '@kit.ArkUI';
 import { dataSharePredicates } from '@kit.ArkData';
 import { RecordVideoOptions } from '../types/VideoFile';
-import { CameraCaptureError, CameraRuntimeError } from '../types/CameraError';
+import { CameraCaptureError } from '../types/CameraError';
 import { RNOHContext } from '@rnoh/react-native-openharmony/ts';
 import geoLocationManager from '@ohos.geoLocationManager';
 import type { VisionCameraViewSpec } from '../types/VisionCameraViewSpec';
@@ -91,6 +91,15 @@ export default class CameraSession {
     mirror: false,
     quality: camera.QualityLevel.QUALITY_LEVEL_MEDIUM,
   };
+  private videoStartParams: RecordVideoOptions = {
+    onRecordingError: (error) => {
+      Logger.info(TAG, `videoStartParmas CameraSession: onRecordingError.${JSON.stringify(error)}`);
+    },
+    onRecordingFinished: (video) => {
+      Logger.info(TAG, `CameraSession: onRecordingFinished ${JSON.stringify(video)}}`);
+    },
+    videoCodec: this.videoCodeC
+  }
 
   constructor(_ctx?: RNOHContext) {
     _ctx && (this.ctx = _ctx);
@@ -176,7 +185,7 @@ export default class CameraSession {
       this.setTorch(props.torch)
     }
     if (props.videoStabilizationMode) {
-      this.setVideoStabilizationMode(props.videoStabilizationMode)
+      await this.setVideoStabilizationMode(props.videoStabilizationMode)
       Logger.info(TAG, `props.setVideoStabilizationMode:${props.videoStabilizationMode}`)
     }
     if (props.photoQualityBalance !== 'balanced') {
@@ -196,11 +205,12 @@ export default class CameraSession {
     this.capability = this.cameraManager.getSupportedOutputCapability(currentDevice, camera.SceneMode.NORMAL_VIDEO);
     if (surfaceId && props.preview) {
       this.previewProfile = this.capability.previewProfiles.find((profile: camera.Profile) => {
-        if(props.videoHdr) {
+        if (props.videoHdr) {
           return profile.size.width === this.videoSize.width && profile.size.height === this.videoSize.height &&
             profile.format === camera.CameraFormat.CAMERA_FORMAT_YCRCB_P010;
         } else {
-          return profile.size.width === this.videoSize.width && profile.size.height === this.videoSize.height;
+          return profile.size.width === this.videoSize.width && profile.size.height === this.videoSize.height &&
+            profile.format === camera.CameraFormat.CAMERA_FORMAT_YUV_420_SP;
         }
       });
       Logger.info(TAG, `initVideoSession previewProfile ${JSON.stringify(this.previewProfile)})`);
@@ -209,27 +219,23 @@ export default class CameraSession {
       Logger.info(TAG, `initVideoSession previewOutput ${this.previewOutput}`);
     }
 
-    this.avRecorder = await media.createAVRecorder();
+
+    Logger.info(TAG,
+      `initVideoSession: YCRCB_P010:${camera.CameraFormat.CAMERA_FORMAT_YCRCB_P010}  YUV_420_SP :${camera.CameraFormat.CAMERA_FORMAT_YUV_420_SP}`);
     this.videoProfile = this.capability.videoProfiles.find((profile: camera.VideoProfile) => {
       if (props.videoHdr) {
         return profile.size.width === this.videoSize.width && profile.size.height === this.videoSize.height &&
           profile.format === camera.CameraFormat.CAMERA_FORMAT_YCRCB_P010;
       } else {
-        return profile.size.width === this.videoSize.width && profile.size.height === this.videoSize.height;
+        return profile.size.width === this.videoSize.width && profile.size.height === this.videoSize.height &&
+          profile.format === camera.CameraFormat.CAMERA_FORMAT_YUV_420_SP;
       }
     });
 
+    Logger.info(TAG, `initVideoSession:  this.videoProfile :${JSON.stringify(this.videoProfile)}`);
     Logger.info(TAG, `initVideoSession: income: no surfaceId`);
-    let videoStartParams: RecordVideoOptions = {
-      onRecordingError: (error) => {
-        Logger.info(TAG, `videoStartParmas CameraSession: onRecordingError.${JSON.stringify(error)}`);
-      },
-      onRecordingFinished: (video) => {
-        Logger.info(TAG, `CameraSession: onRecordingFinished ${JSON.stringify(video)}}`);
-      },
-      videoCodec: this.videoCodeC
-    }
-    this.videoOutput = await this.recordPrepared(videoStartParams, props);
+
+    this.videoOutput = await this.recordPrepared(this.videoStartParams, props);
 
     Logger.info(TAG, `initVideoSession videoProfiles: ${JSON.stringify(this.videoProfile)}`);
     this.videoSession = this.cameraManager?.createSession(camera.SceneMode.NORMAL_VIDEO);
@@ -238,7 +244,7 @@ export default class CameraSession {
     Logger.info(TAG, `initVideoSession beginConfig`);
     this.videoSession.addInput(this.cameraInput);
     Logger.info(TAG, `initVideoSession cameraInput`);
-    if (surfaceId && this.previewOutput  && props.preview) {
+    if (surfaceId && this.previewOutput && props.preview) {
       this.videoSession.addOutput(this.previewOutput);
       Logger.info(TAG, `initVideoSession previewOutput`);
     }
@@ -253,8 +259,8 @@ export default class CameraSession {
       Logger.error(TAG, `initVideoSession commitConfig1 ${JSON.stringify(error)}`);
     }
 
-    if(!props.videoStabilizationMode) {
-      this.setVideoStabilizationMode('auto')
+    if (!props.videoStabilizationMode) {
+      await this.setVideoStabilizationMode(props.videoStabilizationMode)
     }
 
     Logger.info(TAG, `initVideoSession end`);
@@ -294,10 +300,19 @@ export default class CameraSession {
     Logger.info(TAG, `initPhotoSession commitConfig end`);
   }
 
-  hdrChange(isHdr:boolean){
-    Logger.info(TAG, `hdrChange isHdr ${isHdr}`);
+  async hdrChange(props: VisionCameraViewSpec.RawProps) {
+    Logger.info(TAG, `hdrChange isHdr ${props?.videoHdr}`);
     this.previewProfile = this.capability?.previewProfiles.find((profile: camera.VideoProfile) => {
-      if (isHdr) {
+      if (props?.videoHdr) {
+        return profile.size.width === this.videoSize.width && profile.size.height === this.videoSize.height &&
+          profile.format === camera.CameraFormat.CAMERA_FORMAT_YCRCB_P010;
+      } else {
+        return profile.size.width === this.videoSize.width && profile.size.height === this.videoSize.height &&
+          profile.format === camera.CameraFormat.CAMERA_FORMAT_YUV_420_SP;
+      }
+    });
+    this.videoProfile = this.capability?.videoProfiles.find((profile: camera.VideoProfile) => {
+      if (props?.videoHdr) {
         return profile.size.width === this.videoSize.width && profile.size.height === this.videoSize.height &&
           profile.format === camera.CameraFormat.CAMERA_FORMAT_YCRCB_P010;
       } else {
@@ -307,20 +322,38 @@ export default class CameraSession {
     });
 
     Logger.info(TAG, `hdrChange previewProfile ${JSON.stringify(this.previewProfile)})`);
-    let localPreviewOutput = this.cameraManager.createPreviewOutput(this.previewProfile, this.preSurfaceId);
-    Logger.info(TAG, `hdrChange createPreviewOutput localPreviewOutput`);
-    this.videoSession?.beginConfig();
-    if(this.previewOutput){
-      this.videoSession?.removeOutput(this.previewOutput);
-      Logger.info(TAG, `hdrChange previewOutput remove`);
+    await this.videoSession?.stop();
+    try {
+      this.videoSession?.beginConfig();
+      if (this.previewOutput) {
+        this.videoSession?.removeOutput(this.previewOutput);
+        Logger.info(TAG, `hdrChange previewOutput remove`);
+        await this.previewOutput.release();
+      }
+      let localPreviewOutput = this.cameraManager.createPreviewOutput(this.previewProfile, this.preSurfaceId);
+      Logger.info(TAG, `hdrChange createPreviewOutput localPreviewOutput`);
+      this.previewOutput = localPreviewOutput;
+      this.videoSession?.addOutput(localPreviewOutput);
+      Logger.info(TAG, `hdrChange previewOutput add`);
+
+      let localVideoOutput = await this.recordPrepared(this.videoStartParams, props)
+      Logger.info(TAG, `hdrChange recordPrepared end`);
+      if (this.videoOutput) {
+        this.videoSession?.removeOutput(this.videoOutput);
+        await this.videoOutput.release();
+        Logger.info(TAG, `hdrChange removeOutput videoOutput end`);
+      }
+      this.videoOutput = localVideoOutput;
+      this.videoSession.addOutput(this.videoOutput);
+      Logger.info(TAG, `hdrChange addOutput videoOutput end`);
+      await this.videoSession?.commitConfig();
+      Logger.info(TAG, `hdrChange videoOutput commitConfig end`);
+      await this.videoSession?.start();
+      await this.setVideoStabilizationMode(props.videoStabilizationMode);
+    } catch (error) {
+      Logger.error(TAG, `hdrChange change Output error,${JSON.stringify(error)}`);
     }
-    this.previewOutput = localPreviewOutput;
-    this.videoSession?.addOutput(localPreviewOutput);
-    Logger.info(TAG, `hdrChange previewOutput add`);
-    this.videoSession?.commitConfig();
-    Logger.info(TAG, `hdrChange previewOutput addOutput end`);
-    this.videoSession?.start();
-    Logger.info(TAG, `hdrChange previewOutput addOutput start`);
+    Logger.info(TAG, `hdrChange change Output end`);
   }
 
   async previewChange(preview: boolean): Promise<void> {
@@ -331,9 +364,9 @@ export default class CameraSession {
         Logger.info(TAG, `previewChange preview previewOutput is exits`);
         targetSession?.beginConfig();
         targetSession?.addOutput(this.previewOutput);
-        targetSession?.commitConfig();
+        await targetSession?.commitConfig();
         Logger.info(TAG, `previewChange previewOutput exits addOutput end`);
-        targetSession?.start();
+        await targetSession?.start();
         Logger.info(TAG, `previewChange previewOutput exits addOutput start`);
       } else {
         this.previewProfile = this.capability.previewProfiles[this.capability.previewProfiles.length - 1];
@@ -342,9 +375,9 @@ export default class CameraSession {
         Logger.info(TAG, `previewChange createPreviewOutput`);
         targetSession?.beginConfig();
         targetSession?.addOutput(this.previewOutput);
-        targetSession?.commitConfig();
+        await targetSession?.commitConfig();
         Logger.info(TAG, `previewChange preview previewOutput addOutput end`);
-        targetSession?.start();
+        await targetSession?.start();
         Logger.info(TAG, `previewChange preview previewOutput addOutput start`);
       }
     } else {
@@ -352,9 +385,9 @@ export default class CameraSession {
         Logger.info(TAG, `previewChange preview false,previewOutput removeOutput start`);
         targetSession?.beginConfig();
         targetSession?.removeOutput(this.previewOutput);
-        targetSession?.commitConfig();
+        await targetSession?.commitConfig();
         Logger.info(TAG, `previewChange preview false,previewOutput removeOutput end`);
-        targetSession?.start();
+        await targetSession?.start();
         Logger.info(TAG, `previewChange preview false,previewOutput removeOutput start`);
       }
     }
@@ -364,6 +397,8 @@ export default class CameraSession {
    * 录制准备
    */
   async recordPrepared(options: RecordVideoOptions, props: VisionCameraViewSpec.RawProps) {
+    Logger.info(TAG, `initVideoSession props.videoHdr: ${props.videoHdr.toString()}`);
+    this.avRecorder = await media.createAVRecorder();
     Logger.info(TAG, `recordPrepared options: ${JSON.stringify(options)}`)
     let videoBitRate: number = 1
     if (typeof options.videoBitRate === 'number') {
@@ -494,7 +529,6 @@ export default class CameraSession {
     }
   }
 
-
   //设置曝光补偿
   setExposure(exposure: number): void {
     Logger.info(TAG, `setExposure: ${exposure}`)
@@ -570,7 +604,7 @@ export default class CameraSession {
   /**
    * 设置视频防抖模式
    */
-  setVideoStabilizationMode(mode: string): void {
+  async setVideoStabilizationMode(mode?: string) {
     if (!this.videoSession) {
       return
     }
@@ -587,7 +621,7 @@ export default class CameraSession {
     if (mode === 'cinematic-extended') {
       videoMode = camera.VideoStabilizationMode.HIGH
     }
-    Logger.info(TAG, `|: videoMode: ${videoMode}`)
+    Logger.info(TAG, `setVideoStabilizationMode: videoMode: ${videoMode}`)
     let isSupported: boolean = false;
     try {
       isSupported = this.videoSession.isVideoStabilizationModeSupported(videoMode);
@@ -598,12 +632,18 @@ export default class CameraSession {
     }
     if (isSupported) {
       try {
+        await this.videoSession.stop();
         this.videoSession.setVideoStabilizationMode(videoMode);
         Logger.info(TAG, `setVideoStabilizationMode: setVideoStabilizationMode`)
+        await this.videoSession.start();
       } catch (error) {
         let err = error as BusinessError;
         Logger.error(TAG, `The setVideoStabilizationMode call failed. error code: ${err.code}`);
       }
+    } else{
+      this.ctx &&
+      this.ctx.rnInstance.emitDeviceEvent('onError', new CameraCaptureError('capture/unknown',
+        `the device does not support the ${mode} video stabilization mode.`));
     }
   }
 
@@ -755,7 +795,6 @@ export default class CameraSession {
     }
   }
 
-
   /**
    * 转换为鸿蒙Point坐标
    * VC坐标系(x,y)-> OH坐标系(x/w,y/h)
@@ -874,16 +913,33 @@ export default class CameraSession {
     await this.waitForPathResult();
     let thumbnail = await this.getThumbnail();
     let photoFile: PhotoFile = {} as PhotoFile;
-    photoFile.width = this.photoProfile?.size.width;
-    photoFile.height = this.photoProfile?.size.height;
+    photoFile.width = this.photoProfile?.size.height;
+    photoFile.height = this.photoProfile?.size.width;
     photoFile.path = this.photoPath;
     photoFile.isRawPhoto = false;
     photoFile.thumbnail = thumbnail;
+    photoFile.orientation = this.getOrientation(this.photoCaptureSetting.rotation)
     Logger.info(TAG, `takePhoto photoFile:${JSON.stringify(photoFile)}`);
 
     this.takingPhoto = false;
     this.photoPath = '';
     return photoFile;
+  }
+
+  getOrientation(orientation: camera.ImageRotation) {
+    switch (orientation) {
+      case camera.ImageRotation.ROTATION_0:
+        return Orientation.PORTRAIT;
+      case camera.ImageRotation.ROTATION_90:
+        return Orientation.LANDSCAPE_LEFT;
+      case camera.ImageRotation.ROTATION_180:
+        return Orientation.PORTRAIT_UPSIDE_DOWN;
+      case camera.ImageRotation.ROTATION_270:
+        return Orientation.LANDSCAPE_RIGHT;
+      default:
+        Logger.error(TAG, `getOrientation param:${orientation}`);
+        break;
+    }
   }
 
   /**
@@ -1122,8 +1178,9 @@ export default class CameraSession {
   async startRecording(options: RecordVideoOptions, props: VisionCameraViewSpec.RawProps) {
     Logger.info(TAG,
       `startRecording.state:${this.avRecorder.state}, videoCodeC:${options.videoCodec}, this:${this.videoCodeC}`);
-    if(options.fileType && options.fileType === 'mov') {
-      this.ctx && this.ctx.rnInstance.emitDeviceEvent('onRecordingError', new CameraCaptureError('capture/no-recording-in-progress',
+    if (options.fileType && options.fileType === 'mov') {
+      this.ctx &&
+      this.ctx.rnInstance.emitDeviceEvent('onRecordingError', new CameraCaptureError('capture/no-recording-in-progress',
         'the system does not support the MOV format.'));
       return;
     }
@@ -1134,22 +1191,23 @@ export default class CameraSession {
       if (rateRange.min <= props.fps && rateRange.max >= props.fps) {
         Logger.info(TAG, `recordPrepared rateRange, props fps:${props.fps}}`);
       } else {
-        this.ctx && this.ctx.rnInstance.emitDeviceEvent('onRecordingError', new CameraCaptureError('capture/no-recording-in-progress',
-          `FPS should be in (${rateRange.min}-${rateRange.max})`));
+        this.ctx && this.ctx.rnInstance.emitDeviceEvent('onRecordingError',
+          new CameraCaptureError('capture/no-recording-in-progress',
+            `FPS should be in (${rateRange.min}-${rateRange.max})`));
         return;
       }
     }
-    if(props.videoHdr && options.videoCodec === 'h264') {
+    if (props.videoHdr && options.videoCodec === 'h264') {
       Logger.error(TAG, `recordPrepared rateRange, props videoHdr:${props.videoHdr},videoCodec:${options.videoCodec}`);
-      this.ctx && this.ctx.rnInstance.emitDeviceEvent('onRecordingError', new CameraCaptureError('capture/encoder-error',
+      this.ctx &&
+      this.ctx.rnInstance.emitDeviceEvent('onRecordingError', new CameraCaptureError('capture/encoder-error',
         'the encoding formats of videoHdr and videoCodec do not match.'));
       return;
     }
 
-
-    if (this.avRecorder.state === 'prepared' || this.avRecorder.state === 'idle' || this.avRecorder.state === 'released') {
-
-      if(this.avRecorder.state !== 'released') {
+    if (this.avRecorder.state === 'prepared' || this.avRecorder.state === 'idle' ||
+      this.avRecorder.state === 'released') {
+      if (this.avRecorder.state !== 'released') {
         await this.avRecorder.release();
         Logger.info(TAG, 'startRecording.idle.release');
       }
@@ -1158,18 +1216,18 @@ export default class CameraSession {
         Logger.info(TAG, 'startRecording.changeCodeC');
       }
       if (this.avRecorder.state === 'released') {
-        this.avRecorder = await media.createAVRecorder();
-        Logger.info(TAG, `startRecording.state: again recordPrepared`);
-        // 重新 prepared
+
         let videoOutput: camera.VideoOutput = await this.recordPrepared(options, props)
         this.videoSession.beginConfig();
         if (this.videoOutput) {
           this.videoSession?.removeOutput(this.videoOutput);
+          await this.videoOutput.release();
         }
         this.videoOutput = videoOutput;
         this.videoSession.addOutput(this.videoOutput);
         await this.videoSession.commitConfig();
         await this.videoSession.start();
+        await this.setVideoStabilizationMode(props.videoStabilizationMode);
       }
       if (this.videoSession.hasFlash()) {
         if (options.flash === 'on' &&
