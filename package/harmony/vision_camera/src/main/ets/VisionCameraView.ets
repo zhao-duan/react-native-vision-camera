@@ -38,7 +38,7 @@ import {
 } from './core/CameraConfig';
 import { display } from '@kit.ArkUI';
 import ScanSession from './service/ScanSession';
-import { cameraState } from './core/CameraEnumBox';
+import { cameraState, VideoStabilizationMode } from './core/CameraEnumBox';
 import CameraManager from './service/CameraManager';
 import { CameraDeviceInfo } from './core/CameraDeviceInfo';
 import Utils from './utils/Utils';
@@ -289,12 +289,20 @@ export struct VisionCameraView {
     }
     if (props.videoHdr !== undefined && this.prevProps?.videoHdr !== props.videoHdr) {
       Logger.info(TAG, `videoHdr update:${props.videoHdr}.`)
+      if (props.videoHdr !== undefined && props.videoStabilizationMode !== VideoStabilizationMode.AUTO) {
+        this.onError(new CameraRuntimeError('unknown/unknown', 'props.videoStabilizationMode must be auto'))
+        return;
+      }
       this.cameraSession.hdrChange(props);
     }
     if (props.videoStabilizationMode !== undefined &&
       this.prevProps?.videoStabilizationMode !== props.videoStabilizationMode) {
+      if (props.videoHdr) {
+        this.onError(new CameraRuntimeError('unknown/unknown', 'props.videoHdr must be false'))
+        return;
+      }
       Logger.info(TAG, `updateProps, videoStabilizationModeChange: ${props.videoStabilizationMode}`);
-      this.cameraSession.setVideoStabilizationMode(props.videoStabilizationMode);
+      this.cameraSession.setVideoStabilizationMode(false, props.videoStabilizationMode);
     }
     this.cameraSession.setResizeMode(props.resizeMode, this.localDisplay?.width, this.localDisplay?.height,
       (width, height) => {
