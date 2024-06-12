@@ -9,32 +9,56 @@
       {
         "name": "ohos.permission.CAMERA",
         "reason": "$string:camera_reason",
-        "usedScene": {}
+        "usedScene": {
+          "abilities": [
+            "EntryAbility"
+          ]
+        }
       },
       {
         "name": "ohos.permission.MICROPHONE",
         "reason": "$string:microphone_reason",
-        "usedScene": {}
+        "usedScene": {
+          "abilities": [
+            "EntryAbility"
+          ]
+        }
       },
       {
         "name": "ohos.permission.MEDIA_LOCATION",
         "reason": "$string:media_location_reason",
-        "usedScene": {}
+        "usedScene": {
+          "abilities": [
+            "EntryAbility"
+          ]
+        }
       },
       {
         "name": "ohos.permission.APPROXIMATELY_LOCATION",
         "reason": "$string:location_reason",
-        "usedScene": {}
+        "usedScene": {
+          "abilities": [
+            "EntryAbility"
+          ]
+        }
       },
       {
         "name": "ohos.permission.WRITE_IMAGEVIDEO",
         "reason": "$string:write_media",
-        "usedScene": {}
+        "usedScene": {
+          "abilities": [
+            "EntryAbility"
+          ]
+        }
       },
       {
         "name": "ohos.permission.READ_IMAGEVIDEO",
-        "reason": "$string:write_media",
-        "usedScene": {}
+        "reason": "$string:read_media",
+        "usedScene": {
+          "abilities": [
+            "EntryAbility"
+          ]
+        }
       }
     ]
   }
