@@ -24,7 +24,7 @@
 import camera from '@ohos.multimedia.camera';
 import { RNComponentContext, RNViewBase } from '@rnoh/react-native-openharmony';
 import Logger from './utils/Logger';
-import { CameraRuntimeError, UnknownError } from './types/CameraError';
+import { CameraCaptureError, CameraRuntimeError, CaptureError } from './types/CameraError';
 import PermissionUtils from './utils/PermissionUtils';
 import CameraSession from './service/CameraSession';
 import {
@@ -32,7 +32,6 @@ import {
   CameraPermissionStatus,
   PhotoFile,
   Point,
-  ScanRect,
   ScanResult,
   TakePhotoOptions
 } from './core/CameraConfig';
@@ -83,6 +82,7 @@ export struct VisionCameraView {
   @State localDisplayWidth: number = 100;
   @State localDisplayHeight: number = 100;
   @State androidPreviewViewType: 'surface' | 'texture' = 'surface';
+  private noViewPhoto: boolean = false;
 
   aboutToAppear() {
     this.localDisplay = display.getDefaultDisplaySync();
@@ -367,7 +367,16 @@ export struct VisionCameraView {
             if (this.currentProps.photo) {
               Logger.debug(TAG, `registerCommandCallback: takePhoto,  ${JSON.stringify(args)}`)
               const options = args[0] as TakePhotoOptions;
-              this.takePhoto(options);
+              if(this.currentProps.preview){
+                this.takePhoto(options);
+                this.noViewPhoto = false;
+              }else if(!this.noViewPhoto){
+                this.noViewPhoto = true;
+                this.takePhoto(options);
+              } else {
+                this.ctx.rnInstance.emitDeviceEvent('onError', new CameraCaptureError('capture/unknown',
+                  `When preview is set to false, the photo can be taken only once.`));
+              }
             } else {
               Logger.info(TAG, `props photo error, photo:${JSON.stringify(this.currentProps.photo)}`);
             }

@@ -736,16 +736,15 @@ export default class CameraSession {
     //设置回调之后，调用photoOutput的capture方法，就会将拍照的buffer回传到回调中
     photoOutput.on('photoAvailable', (errCode: BusinessError, photo: camera.Photo): void => {
       Logger.info(TAG, 'setPhotoOutputCb getPhoto start');
-      Logger.info(`err: ${JSON.stringify(errCode)}`);
       if (errCode || photo === undefined) {
-        Logger.error(TAG, 'setPhotoOutputCb getPhoto failed');
+        Logger.error(TAG, `setPhotoOutputCb photoAvailable failed, ${JSON.stringify(errCode)}`);
         return;
       }
       let imageObj = photo.main;
       imageObj.getComponent(image.ComponentType.JPEG, (errCode: BusinessError, component: image.Component): void => {
         Logger.info(TAG, 'setPhotoOutputCb getComponent start');
         if (errCode || component === undefined) {
-          Logger.error(TAG, 'setPhotoOutputCb getComponent failed');
+          Logger.error(TAG, `setPhotoOutputCb getComponent failed, ${JSON.stringify(errCode)}`);
           return;
         }
         let buffer: ArrayBuffer;
@@ -1242,8 +1241,8 @@ export default class CameraSession {
         this.videoSession?.setColorSpace(colorSpace);
         Logger.info(TAG, `startRecording setColorSpace end, setColorSpace: ${colorSpace}`);
         await this.videoSession.commitConfig();
-        await this.videoSession.start();
         await this.setVideoStabilizationMode(true);
+        await this.videoSession.start();
         Logger.info(TAG, `startRecording setVideoStabilizationMode commitConfig end`)
 
       }
