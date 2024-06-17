@@ -167,7 +167,6 @@ export const Camera = forwardRef<VisionCameraRef, VisionCameraProps>(
             (isActive: boolean) => {
                 if (isActive === undefined) throw new Error("VisionCameraCommands isActive is undefined");
                 if (!VisionCameraRef.current) throw new Error("VisionCameraRef.current is NaN");
-                console.log("wswsws useCallback setIsActive", isActive);
                 return VisionCameraCommands.setIsActive(VisionCameraRef.current, isActive);
             },
             [isActive]
@@ -356,9 +355,6 @@ export const Camera = forwardRef<VisionCameraRef, VisionCameraProps>(
             const onCodeScannedListener = DeviceEventEmitter.addListener('onCodeScanned', (data: { codes: Code[], frame: CodeScannerFrame }) => {
                 codeScanner?.onCodeScanned?.(data.codes, data.frame);
             });
-            const onAppStateDidChange = DeviceEventEmitter.addListener('appStateDidChange', (e) => {
-                console.log("appStateDidChange", e)
-            });
             return () => {
                 onInitializedListener.remove();
                 onShutterListener.remove();
@@ -366,7 +362,6 @@ export const Camera = forwardRef<VisionCameraRef, VisionCameraProps>(
                 onStoppedListener.remove();
                 onErrorListener.remove();
                 onCodeScannedListener.remove();
-                onAppStateDidChange.remove();
             }
 
         })

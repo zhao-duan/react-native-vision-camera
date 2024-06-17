@@ -367,10 +367,10 @@ export struct VisionCameraView {
             if (this.currentProps.photo) {
               Logger.debug(TAG, `registerCommandCallback: takePhoto,  ${JSON.stringify(args)}`)
               const options = args[0] as TakePhotoOptions;
-              if(this.currentProps.preview){
+              if (this.currentProps.preview) {
                 this.takePhoto(options);
                 this.noViewPhoto = false;
-              }else if(!this.noViewPhoto){
+              } else if (!this.noViewPhoto) {
                 this.noViewPhoto = true;
                 this.takePhoto(options);
               } else {
@@ -384,7 +384,10 @@ export struct VisionCameraView {
           if (command === 'focus') {
             Logger.debug(TAG, `registerCommandCallback: focus,  ${JSON.stringify(args)}`)
             const point = args[0] as Point;
-            this.focus(point);
+            this.focus({
+              x: vp2px(point.x),
+              y: vp2px(point.y),
+            });
           }
           if (command === 'getAvailableCameraDevices') {
             Logger.debug(TAG, `registerCommandCallback: getAvailableCameraDevices.`)
