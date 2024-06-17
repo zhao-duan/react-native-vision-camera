@@ -516,6 +516,9 @@ export default class CameraSession {
         componentHeight = displayWidth / previewAspect;
       }
     }
+    this.rect = {
+      surfaceWidth: componentWidth, surfaceHeight: componentHeight
+    }
     callback(componentWidth, componentHeight);
   }
 
