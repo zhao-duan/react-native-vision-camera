@@ -96,11 +96,8 @@ export interface CodeScanner {
 
 export const PermissionArray: Array<Permissions> = [
   'ohos.permission.CAMERA',
-  'ohos.permission.MEDIA_LOCATION',
   'ohos.permission.MICROPHONE',
-  'ohos.permission.APPROXIMATELY_LOCATION',
-  'ohos.permission.WRITE_IMAGEVIDEO',
-  'ohos.permission.READ_IMAGEVIDEO',
+  'ohos.permission.APPROXIMATELY_LOCATION'
 ];
 
 export type CameraPermissionStatus = 'granted' | 'not-determined' | 'denied' | 'restricted'
