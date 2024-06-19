@@ -31,9 +31,7 @@ import { BusinessError } from '@ohos.base';
 import fs from '@ohos.file.fs';
 import { CameraPosition, PhysicalCameraDeviceType, VideoStabilizationMode, Orientation } from '../core/CameraEnumBox';
 import { CameraDeviceFormat, CameraDeviceInfo } from '../core/CameraDeviceInfo';
-import PhotoAccessHelper from '@ohos.file.photoAccessHelper';
 import { display } from '@kit.ArkUI';
-import { dataSharePredicates } from '@kit.ArkData';
 import { RecordVideoOptions } from '../types/VideoFile';
 import { CameraCaptureError } from '../types/CameraError';
 import { RNOHContext } from '@rnoh/react-native-openharmony/ts';
@@ -73,6 +71,8 @@ export default class CameraSession {
   private videoSession?: camera.VideoSession;
   private avRecorder: media.AVRecorder;
   private photoPath: string = '';
+  private basicPath: string = '';
+  private outPathArray: string[] = ['photo', 'video'];
   private videoFile: fs.File;
 
   private videoSize: camera.Size = {
@@ -102,9 +102,16 @@ export default class CameraSession {
     videoCodec: this.videoCodeC
   }
 
+  private offsetX: number = 0; // preview原点相对于设备原点x偏移量
+  private offsetY: number = 0;// preview原点相对于设备原点y偏移量
+
   constructor(_ctx?: RNOHContext) {
     _ctx && (this.ctx = _ctx);
     this.context = getContext(this);
+    this.basicPath = this.context.filesDir;
+    for (let outPath of this.outPathArray) {
+      this.initTempPath(outPath);
+    }
     this.localDisplay = display.getDefaultDisplaySync();
     if (this.localDisplay) {
       Logger.info(TAG, `localDisplay: ${JSON.stringify(this.localDisplay)}`);
@@ -120,6 +127,28 @@ export default class CameraSession {
       Logger.info(TAG, 'getCameraManager try end');
     } catch (e) {
       Logger.info(TAG, `getCameraManager catch e:${JSON.stringify(e)}`);
+    }
+  }
+
+  /**
+   * 初始化保存图片和视频的目录
+   * @param path
+   */
+  initTempPath(path: string) {
+    let pathDir = this.basicPath + '/' + path;
+    let res;
+    // /data/app/el2/100/base/com.example.kacha/haps/entry/files/photo
+    Logger.info(TAG, `constructor pathDir:${pathDir}`);
+    try {
+      res = fs.accessSync(pathDir);
+    } catch (error) {
+      Logger.info(TAG, `constructor error path not exists:${JSON.stringify(error)}`);
+    }
+    Logger.info(TAG, `constructor res:${res?.toString()}`);
+    if (!res) {
+      Logger.info(TAG, `constructor photo path not exists:${pathDir}`);
+      fs.mkdirSync(pathDir, true);
+      Logger.info(TAG, `constructor access photo path create success`);
     }
   }
 
@@ -434,14 +463,9 @@ export default class CameraSession {
       ...audioConfig, ...videoConfig
     } : videoConfig
     Logger.info(TAG, `recordPrepared videoConfigProfile: ${JSON.stringify(videoConfigProfile)}`);
-    let vOptions: PhotoAccessHelper.CreateOptions = {
-      title: Date.now().toString()
-    };
-    let photoAccessHelper: PhotoAccessHelper.PhotoAccessHelper = PhotoAccessHelper.getPhotoAccessHelper(this.context);
 
     Logger.info(TAG, `recordPrepared fileType: ${options.fileType}`);
-    this.videoUri =
-      await photoAccessHelper.createAsset(PhotoAccessHelper.PhotoType.VIDEO, options.fileType || 'mp4', vOptions);
+    this.videoUri = `${this.basicPath}/${this.outPathArray[1]}/${Date.now()}.${options.fileType || 'mp4'}`;
     Logger.info(TAG, `recordPrepared videoUri: ${this.videoUri}`);
     this.videoFile = fs.openSync(this.videoUri, fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE);
     let aVAudio = {
@@ -489,6 +513,7 @@ export default class CameraSession {
     }
   }
 
+
   //设置预览样式 cover/contain
   setResizeMode(resizeMode: string, displayWidth: number = 1216, displayHeight: number = 2688,
     callback: (width: number, height: number) => void) {
@@ -516,6 +541,11 @@ export default class CameraSession {
         componentHeight = displayWidth / previewAspect;
       }
     }
+    // 计算设备左上角与预览流左上角偏移量
+    this.offsetX = (componentWidth - displayWidth) / 2;
+    this.offsetY = (componentHeight - displayHeight) / 2;
+    Logger.info(TAG, `setResizeMode componentWidth:${componentWidth},componentHeight=${componentHeight}`)
+    Logger.info(TAG, `setResizeMode this.offsetX:${this.offsetX},this.offsetY=${this.offsetY}`)
     this.rect = {
       surfaceWidth: componentWidth, surfaceHeight: componentHeight
     }
@@ -711,26 +741,26 @@ export default class CameraSession {
 
   async savePicture(buffer: ArrayBuffer, img: image.Image): Promise<void> {
     Logger.info(TAG, 'savePicture start');
-    let photoAccessHelper: PhotoAccessHelper.PhotoAccessHelper = PhotoAccessHelper.getPhotoAccessHelper(this.context);
-    let options: PhotoAccessHelper.CreateOptions = {
-      title: Date.now().toString()
-    };
-    let photoUri: string = await photoAccessHelper.createAsset(PhotoAccessHelper.PhotoType.IMAGE, 'jpg', options);
-    Logger.info(TAG, `savePicture photoUri: ${photoUri}`);
-    //createAsset的调用需要ohos.permission.READ_IMAGEVIDEO和ohos.permission.WRITE_IMAGEVIDEO的权限
-    let file: fs.File = fs.openSync(photoUri, fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE);
-    await fs.write(file.fd, buffer);
+    let photoFile = `${this.basicPath}/${this.outPathArray[0]}/${Date.now().toString()}.jpeg`;
+    Logger.info(TAG, `savePicture photoUri: ${photoFile}`);
+    let file: fs.File;
+    try {
+      file = fs.openSync(photoFile, fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE);
+      await fs.write(file.fd, buffer);
+    } catch (error) {
+      Logger.error(TAG, `savePicture write failed,code:${error}.`);
+    }
     try {
       let fileInfo = fs.statSync(file.fd);
       Logger.info(TAG, `savePicture statSync,fileInfo:${JSON.stringify(fileInfo.size)}`);
     } catch (error) {
-      Logger.error(TAG, `savePicture statSync failed,code:${error?.code}.`);
+      Logger.error(TAG, `savePicture statSync failed,code:${error}.`);
     }
     fs.closeSync(file);
     img.release();
 
     Logger.info(TAG, 'savePicture end');
-    this.photoPath = photoUri;
+    this.photoPath = photoFile;
     this.takingPhoto = false;
   }
 
@@ -821,8 +851,8 @@ export default class CameraSession {
       x: 0, y: 0
     }
     if (rnPoint) {
-      ohPoint.x = rnPoint.x / this.rect.surfaceWidth;
-      ohPoint.y = rnPoint.y / this.rect.surfaceHeight;
+      ohPoint.x = (rnPoint.x + this.offsetX) / this.rect.surfaceWidth;
+      ohPoint.y = (rnPoint.y + this.offsetY) / this.rect.surfaceHeight;
     }
     return ohPoint;
   }
@@ -925,13 +955,11 @@ export default class CameraSession {
     }
     Logger.info(TAG, `photoOutPut.capture success`);
     await this.waitForPathResult();
-    let thumbnail = await this.getThumbnail();
     let photoFile: PhotoFile = {} as PhotoFile;
     photoFile.width = this.photoProfile?.size.height;
     photoFile.height = this.photoProfile?.size.width;
     photoFile.path = this.photoPath;
     photoFile.isRawPhoto = false;
-    photoFile.thumbnail = thumbnail;
     photoFile.orientation = this.getOrientation(this.photoCaptureSetting.rotation)
     Logger.info(TAG, `takePhoto photoFile:${JSON.stringify(photoFile)}`);
 
@@ -954,42 +982,6 @@ export default class CameraSession {
         Logger.error(TAG, `getOrientation param:${orientation}`);
         break;
     }
-  }
-
-  /**
-   * 获取缩略图
-   * @returns
-   */
-  async getThumbnail(): Promise<Record<string, image.ImageInfo>> {
-    Logger.info(TAG, `getThumbnail start`);
-    Logger.info(TAG, `getThumbnail fileName: ${this.photoPath}`);
-    let predicates: dataSharePredicates.DataSharePredicates = new dataSharePredicates.DataSharePredicates();
-    let fetchOption: PhotoAccessHelper.FetchOptions = {
-      fetchColumns: [PhotoAccessHelper.PhotoKeys.URI, PhotoAccessHelper.PhotoKeys.PHOTO_TYPE,
-        PhotoAccessHelper.PhotoKeys.SIZE, PhotoAccessHelper.PhotoKeys.DATE_ADDED],
-      predicates: predicates
-    };
-    let asset: PhotoAccessHelper.PhotoAsset;
-    try {
-      let photoAccessHelper: PhotoAccessHelper.PhotoAccessHelper = PhotoAccessHelper.getPhotoAccessHelper(this.context);
-      let fetchResult: PhotoAccessHelper.FetchResult<PhotoAccessHelper.PhotoAsset> =
-        await photoAccessHelper.getAssets(fetchOption);
-      asset = await fetchResult.getFirstObject();
-    } catch (error) {
-      Logger.error(TAG, `getThumbnail getPhotoAccessHelper failed, code:${error?.code}.`)
-    }
-    Logger.info(TAG, `getThumbnail asset ${JSON.stringify(asset?.uri)}`);
-    Logger.info(TAG, `getThumbnail asset ${JSON.stringify(asset?.displayName)}`);
-    let size: image.Size = {
-      width: 720, height: 720
-    };
-    let pixelMap = await asset?.getThumbnail(size);
-    let imageInfo: image.ImageInfo = await pixelMap?.getImageInfo()
-    let result: Record<string, image.ImageInfo> = {
-      [asset.displayName]: imageInfo
-    }
-    Logger.info(TAG, `getThumbnail result ${JSON.stringify(result)}`);
-    return result;
   }
 
   /**
@@ -1103,6 +1095,7 @@ export default class CameraSession {
     }
   }
 
+
   private getVideoSessionParams(cameraDevice: camera.CameraDevice, cameraInfo: CameraDeviceInfo,
     cameraDevices: camera.CameraDevice[] | undefined) {
     this.initVideoSession(cameraDevice, undefined, {} as VisionCameraViewSpec.RawProps).then(() => {
@@ -1192,6 +1185,14 @@ export default class CameraSession {
   async startRecording(options: RecordVideoOptions, props: VisionCameraViewSpec.RawProps) {
     Logger.info(TAG,
       `startRecording.state:${this.avRecorder.state}, videoCodeC:${options.videoCodec}, this:${this.videoCodeC}`);
+    try{
+      if (await fs.access(this.videoFile?.path)) {
+        await fs.unlink(this.videoFile?.path);
+        Logger.info(TAG,`startRecording unlink init videoFile`);
+      }
+    } catch (error) {
+      Logger.error(TAG,`startRecording not init videoFile, error:${JSON.stringify(error)}`);
+    }
     if (options.fileType && options.fileType === 'mov') {
       this.ctx &&
       this.ctx.rnInstance.emitDeviceEvent('onRecordingError', new CameraCaptureError('capture/no-recording-in-progress',

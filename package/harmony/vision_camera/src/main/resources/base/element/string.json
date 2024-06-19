@@ -21,18 +21,6 @@
       "value": "获取当前位置"
     },
     {
-      "name": "write_media",
-      "value": "输出媒体文件"
-    },
-    {
-      "name": "read_media",
-      "value": "读取媒体文件"
-    },
-    {
-      "name": "media_location_reason",
-      "value": "获取媒体文件位置信息"
-    },
-    {
       "name": "microphone_reason",
       "value": "使用麦克风"
     }

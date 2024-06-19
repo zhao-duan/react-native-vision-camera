@@ -164,10 +164,6 @@ export struct VisionCameraView {
     if (props.enableLocation) {
       permissions.push('ohos.permission.APPROXIMATELY_LOCATION')
     }
-    if (props.photo || props.video) {
-      permissions.push('ohos.permission.READ_IMAGEVIDEO')
-      permissions.push('ohos.permission.WRITE_IMAGEVIDEO')
-    }
     try {
       const res = await new PermissionUtils().defaultGrantPermission(permissions);
       Logger.info(TAG, `defaultGrantPermission success: ${JSON.stringify(res)}`);

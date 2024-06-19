@@ -17,23 +17,8 @@
         "usedScene": {}
       },
       {
-        "name": "ohos.permission.MEDIA_LOCATION",
-        "reason": "$string:media_location_reason",
-        "usedScene": {}
-      },
-      {
         "name": "ohos.permission.APPROXIMATELY_LOCATION",
         "reason": "$string:location_reason",
-        "usedScene": {}
-      },
-      {
-        "name": "ohos.permission.WRITE_IMAGEVIDEO",
-        "reason": "$string:write_media",
-        "usedScene": {}
-      },
-      {
-        "name": "ohos.permission.READ_IMAGEVIDEO",
-        "reason": "$string:read_media",
         "usedScene": {}
       }
     ]
