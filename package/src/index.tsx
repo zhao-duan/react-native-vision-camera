@@ -444,4 +444,12 @@ export const Camera = forwardRef<VisionCameraRef, VisionCameraProps>(
 
 export interface Camera extends VisionCameraRef { };
 
+Camera.getAvailableCameraDevices = NativeVisionCameraModule.getAvailableCameraDevices;
+Camera.getCameraPermissionStatus = NativeVisionCameraModule.getCameraPermissionStatus;
+Camera.requestCameraPermission = NativeVisionCameraModule.requestCameraPermission;
+Camera.getMicrophonePermissionStatus = NativeVisionCameraModule.getMicrophonePermissionStatus;
+Camera.requestMicrophonePermission = NativeVisionCameraModule.requestMicrophonePermission;
+Camera.getLocationPermissionStatus = NativeVisionCameraModule.getLocationPermissionStatus;
+Camera.requestLocationPermission = NativeVisionCameraModule.requestLocationPermission;
+
 export default Camera;
