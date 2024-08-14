@@ -68,7 +68,7 @@ export default class ScanSession {
   /**
    * 启动相机进行扫码
    */
-  async scanStart(surfaceId: string, SurfaceRect, isFirst?: boolean): Promise<ScanResult> {
+  async scanStart(surfaceId: string, SurfaceRect, isFirst: boolean, isAction: boolean, callback: AsyncCallback<Array<scanBarcode.ScanResult>>): Promise<void> {
     Logger.info(TAG, `ScanStart:surfaceId: ${surfaceId}`)
     Logger.info(TAG, `ScanStart:SurfaceRect: ${JSON.stringify(SurfaceRect)}`)
     Logger.info(TAG, `ScanStart:isFirst: ${isFirst}`)
@@ -82,25 +82,20 @@ export default class ScanSession {
       }
       this.ScanFrame = SurfaceRect;
 
-      return new Promise((resolve, reject) => {
-        let viewControl: customScan.ViewControl = {
-          width: SurfaceRect.width,
-          height: SurfaceRect.height,
-          surfaceId: surfaceId
-        };
-        Logger.info(TAG, `start viewControl, info: ${JSON.stringify(viewControl)}`);
-        customScan.start(viewControl, (error: BusinessError, result: Array<scanBarcode.ScanResult>) => {
-          if (error) {
-            Logger.error(TAG, `start failed, code: ${error.code}, message: ${error.message}`);
-            reject(error);
-            return;
-          }
-          const scanResult = this.showScanResult(result);
-          Logger.info(TAG, `scanResult11: ${JSON.stringify(scanResult)}`);
-          this.setEndStatus(true)
-          resolve(scanResult)
-        }, this.frameCallback);
-      })
+      let viewControl: customScan.ViewControl = {
+        width: SurfaceRect.width,
+        height: SurfaceRect.height,
+        surfaceId: surfaceId
+      };
+      Logger.info(TAG, `start viewControl, info: ${JSON.stringify(viewControl)}`);
+      customScan.start(viewControl, callback);
+    }
+  }
+
+  async rescan(isAction: boolean) {
+    this.setEndStatus(true);
+    if (isAction) {
+      customScan.rescan();
     }
   }
 
