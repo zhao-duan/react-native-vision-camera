@@ -4,12 +4,12 @@
 
 ### 1.1 rnoh项目安装
 
-前往[releases](https://github.com/react-native-oh-library/react-native-vision-camera/releases) 页面下载最新的`tgz`包，注意版本号，本文中以`4.0.1-0.0.8`为例，移动到`rnoh/tester`目录下
+前往[releases](https://github.com/react-native-oh-library/react-native-vision-camera/releases) 页面下载最新的`tgz`包，注意版本号，本文中以`4.0.1-0.0.9`为例，移动到`rnoh/tester`目录下
 
 在`tester`目录下安装`tgz`包
 
 ```shell
-npm i @react-native-oh-tpl/react-native-vision-camera@file:./react-native-oh-tpl-react-native-vision-camera-4.0.1-0.0.8.tgz
+npm i @react-native-oh-tpl/react-native-vision-camera@file:./react-native-oh-tpl-react-native-vision-camera-4.0.1-0.0.9.tgz
 ```
 
 ### 1.2 harmony项目安装

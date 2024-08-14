@@ -1,6 +1,6 @@
 {
   "name": "@react-native-oh-tpl/react-native-vision-camera",
-  "version": "4.0.1-0.0.8",
+  "version": "4.0.1-0.0.9",
   "description": "A powerful, high-performance React Native Camera library.",
   "main": "lib/commonjs/index",
   "module": "lib/module/index",
@@ -29,7 +29,7 @@
   "scripts": {
     "codegen": "cd D:\\rnoh\\tester && npm run codegen",
     "har": "rm -rf .\\harmony\\vision_camera && cp -r D:\\rnoh\\tester\\harmony\\vision_camera .\\harmony\\vision_camera",
-    "move": "npm run build && npm pack && copy .\\*.tgz D:\\rnoh\\tester && cd D:\\rnoh\\tester && npm i @react-native-oh-tpl/react-native-vision-camera@file:./react-native-oh-tpl-react-native-vision-camera-4.0.1-0.0.8.tgz -dd",
+    "move": "npm run build && npm pack && copy .\\*.tgz D:\\rnoh\\tester && cd D:\\rnoh\\tester && npm i @react-native-oh-tpl/react-native-vision-camera@file:./react-native-oh-tpl-react-native-vision-camera-4.0.1-0.0.9.tgz -dd",
     "typescript": "tsc --noEmit",
     "lint": "eslint \"**/*.{js,ts,tsx}\"",
     "lint-ci": "yarn lint -f ./node_modules/@firmnav/eslint-github-actions-formatter/dist/formatter.js",
