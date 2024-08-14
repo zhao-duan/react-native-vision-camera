@@ -44,6 +44,8 @@ import Utils from './utils/Utils';
 import { VisionCameraViewSpec } from './types/VisionCameraViewSpec';
 import { RecordVideoOptions } from './types/VideoFile';
 import { Permissions } from '@kit.AbilityKit';
+import { scanBarcode } from '@kit.ScanKit'
+import { BusinessError } from '@kit.BasicServicesKit'
 
 const previewViewType: Record<'surface-view' | 'texture-view', 'surface' | 'texture'> = {
   'surface-view': 'surface',
@@ -443,22 +445,26 @@ export struct VisionCameraView {
 
   async scanStart(isFirst?: boolean) {
     clearTimeout(this.timer)
-    let scanResult: ScanResult | undefined = undefined;
+    let scanResult: ScanResult | Array<scanBarcode.ScanResult> | undefined = undefined;
+    const isActive = this.descriptorWrapper['rawProps'].isActive;
     try {
-      scanResult = await this.scanSession.scanStart(this.surfaceId,
-        { width: this.localDisplayWidth, height: this.localDisplayHeight }, isFirst);
+      this.scanSession.scanStart(this.surfaceId,
+        { width: this.localDisplayWidth, height: this.localDisplayHeight }, isFirst, isActive,
+        (error: BusinessError, result: Array<scanBarcode.ScanResult>) => {
+          if (error) {
+            Logger.error(TAG, `start failed, code: ${error.code}, message: ${error.message} `)
+            return;
+          }
+          scanResult = result;
+          if (scanResult) {
+            const callbackResult = this.scanSession.showScanResult(result);
+            this.ctx.rnInstance.emitDeviceEvent('onCodeScanned', callbackResult);
+          }
+          this.scanSession.rescan(isActive);
+        });
     } catch (error) {
       if (error.code === '1000500001') {
         this.onError(new CameraRuntimeError('unknown/unknown', 'codeScanner preview size not support.'))
-      }
-    }
-    if (scanResult) {
-      this.ctx.rnInstance.emitDeviceEvent('onCodeScanned', scanResult);
-      Logger.info(TAG, `get scan result: ${JSON.stringify(scanResult)}`)
-
-      const isActive = this.descriptorWrapper['rawProps'].isActive;
-      if (isActive) {
-        this.scanStart();
       }
     }
 
