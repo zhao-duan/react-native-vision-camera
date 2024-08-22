@@ -357,7 +357,7 @@ export struct VisionCameraView {
       await this.cameraSession.cameraRelease();
     }
     this.cleanCommandCallback?.();
-    this.this.cancellationCallback()
+    this.cancellationCallback()
   }
 
   registerCommandCallback() {
@@ -569,7 +569,7 @@ export struct VisionCameraView {
     this.cameraSession.resumeRecording()
   }
   cancellationCallback(){
-      this.this.callbackList.forEach(
+      this.callbackList.forEach(
         callback =>{
           callback?.()
         }
