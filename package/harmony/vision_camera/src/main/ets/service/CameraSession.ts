@@ -38,6 +38,7 @@ import { RNOHContext } from '@rnoh/react-native-openharmony/ts';
 import geoLocationManager from '@ohos.geoLocationManager';
 import type { VisionCameraViewSpec } from '../types/VisionCameraViewSpec';
 import colorSpaceManager from '@ohos.graphics.colorSpaceManager';
+import { photoAccessHelper } from '@kit.MediaLibraryKit';
 
 declare function getContext(component?: Object | undefined): Context;
 
@@ -48,6 +49,7 @@ type ZoomRangeType = [number, number];
 
 export default class CameraSession {
   context: Context = undefined;
+  phAccessHelper: photoAccessHelper.PhotoAccessHelper = undefined;
   private cameraManager?: camera.CameraManager;
   private camerasArray?: Array<camera.CameraDevice>;
   private cameraInput?: camera.CameraInput;
@@ -101,13 +103,15 @@ export default class CameraSession {
     },
     videoCodec: this.videoCodeC
   }
-
-  private offsetX: number = 0; // preview原点相对于设备原点x偏移量
-  private offsetY: number = 0;// preview原点相对于设备原点y偏移量
+  // preview原点相对于设备原点x偏移量
+  private offsetX: number = 0;
+  // preview原点相对于设备原点y偏移量
+  private offsetY: number = 0;
 
   constructor(_ctx?: RNOHContext) {
     _ctx && (this.ctx = _ctx);
     this.context = getContext(this);
+    this.phAccessHelper = photoAccessHelper.getPhotoAccessHelper(this.context);
     this.basicPath = this.context.filesDir;
     for (let outPath of this.outPathArray) {
       this.initTempPath(outPath);
@@ -465,8 +469,16 @@ export default class CameraSession {
     Logger.info(TAG, `recordPrepared videoConfigProfile: ${JSON.stringify(videoConfigProfile)}`);
 
     Logger.info(TAG, `recordPrepared fileType: ${options.fileType}`);
+
     this.videoUri = `${this.basicPath}/${this.outPathArray[1]}/${Date.now()}.${options.fileType || 'mp4'}`;
     Logger.info(TAG, `recordPrepared videoUri: ${this.videoUri}`);
+
+    // 点击开始录制才询问是否保存到图库,此时options.fileType不是undefined
+    if (options.fileType != undefined) {
+      this.videoUri =
+        await this.getMediaLibraryUri(this.videoUri, `${Date.now()}`, `${options.fileType || 'mp4'}`,
+          photoAccessHelper.PhotoType.VIDEO)
+    }
     this.videoFile = fs.openSync(this.videoUri, fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE);
     let aVAudio = {
       audioSourceType: media.AudioSourceType.AUDIO_SOURCE_TYPE_MIC
@@ -739,10 +751,39 @@ export default class CameraSession {
     Logger.info(TAG, 'releaseCamera end');
   }
 
+  // 通过弹窗获取需要保存到媒体库的位于应用沙箱的图片/视频uri
+  async getMediaLibraryUri(srcFileUri: string, title: string, fileNameExtension: string,
+    photoType: photoAccessHelper.PhotoType): Promise<string> {
+    try {
+      let srcFileUris: Array<string> = [
+      // 应用沙箱的图片/视频uri
+        srcFileUri
+      ];
+      let photoCreationConfigs: Array<photoAccessHelper.PhotoCreationConfig> = [
+        {
+          title: title,
+          fileNameExtension: fileNameExtension,
+          photoType: photoType,
+          subtype: photoAccessHelper.PhotoSubtype.DEFAULT,
+        }
+      ];
+      let desFileUris: Array<string> =
+        await this.phAccessHelper.showAssetsCreationDialog(srcFileUris, photoCreationConfigs);
+      Logger.info(TAG, `showAssetsCreationDialog success, data is:${desFileUris}`);
+      return desFileUris[0];
+    } catch (err) {
+      Logger.error(TAG, `showAssetsCreationDialog failed, errCode is:${err.code},errMsg is:${err.message}`);
+    }
+  }
+
   async savePicture(buffer: ArrayBuffer, img: image.Image): Promise<void> {
     Logger.info(TAG, 'savePicture start');
     let photoFile = `${this.basicPath}/${this.outPathArray[0]}/${Date.now().toString()}.jpeg`;
     Logger.info(TAG, `savePicture photoUri: ${photoFile}`);
+
+    photoFile =
+      await this.getMediaLibraryUri(photoFile, `${Date.now()}`, 'jpeg', photoAccessHelper.PhotoType.IMAGE)
+
     let file: fs.File;
     try {
       file = fs.openSync(photoFile, fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE);
@@ -1185,13 +1226,13 @@ export default class CameraSession {
   async startRecording(options: RecordVideoOptions, props: VisionCameraViewSpec.RawProps) {
     Logger.info(TAG,
       `startRecording.state:${this.avRecorder.state}, videoCodeC:${options.videoCodec}, this:${this.videoCodeC}`);
-    try{
+    try {
       if (await fs.access(this.videoFile?.path)) {
         await fs.unlink(this.videoFile?.path);
-        Logger.info(TAG,`startRecording unlink init videoFile`);
+        Logger.info(TAG, `startRecording unlink init videoFile`);
       }
     } catch (error) {
-      Logger.error(TAG,`startRecording not init videoFile, error:${JSON.stringify(error)}`);
+      Logger.error(TAG, `startRecording not init videoFile, error:${JSON.stringify(error)}`);
     }
     if (options.fileType && options.fileType === 'mov') {
       this.ctx &&
