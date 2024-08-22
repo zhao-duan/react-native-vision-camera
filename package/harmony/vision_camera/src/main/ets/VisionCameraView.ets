@@ -55,6 +55,7 @@ const TAG: string = 'VisionCameraView:'
 
 @Component
 export struct VisionCameraView {
+  private callbackList:Array<()=> void> =[]
   public static readonly NAME = VisionCameraViewSpec.NAME
   public ctx!: RNComponentContext
   public tag: number = 0
@@ -181,7 +182,7 @@ export struct VisionCameraView {
    */
   subscribeToLifecycleEvents() {
     Logger.info(TAG, `subscribeToLifecycleEvents start`);
-    this.ctx.rnInstance.subscribeToLifecycleEvents("FOREGROUND", () => {
+    this.callbackList.push(this.ctx.rnInstance.subscribeToLifecycleEvents("FOREGROUND", () => {
       Logger.info(TAG, `subscribeToLifecycleEvents FOREGROUND`);
       const props = this.descriptorWrapper['descriptor'].rawProps;
       if (this.cameraState === cameraState.SCAN) {
@@ -211,7 +212,8 @@ export struct VisionCameraView {
         }
       }
     })
-    this.ctx.rnInstance.subscribeToLifecycleEvents("BACKGROUND", async () => {
+    )
+    this.callbackList.push(this.ctx.rnInstance.subscribeToLifecycleEvents("BACKGROUND", async () => {
       Logger.info(TAG, `subscribeToLifecycleEvents BACKGROUND`);
       if (this.cameraState === cameraState.SCAN) {
         clearTimeout(this.timer)
@@ -219,7 +221,8 @@ export struct VisionCameraView {
         this.scanSession.scanRelease();
         Logger.info(TAG, `subscribeToLifecycleEvents BACKGROUND , ${JSON.stringify(this.scanSession)}`);
       }
-    })
+    }))
+
     this.ctx.rnInstance.subscribeToLifecycleEvents("CONFIGURATION_UPDATE", () => {
       Logger.info(TAG, `subscribeToLifecycleEvents CONFIGURATION_UPDATE`);
     })
@@ -354,6 +357,7 @@ export struct VisionCameraView {
       await this.cameraSession.cameraRelease();
     }
     this.cleanCommandCallback?.();
+    this.this.cancellationCallback()
   }
 
   registerCommandCallback() {
@@ -563,6 +567,13 @@ export struct VisionCameraView {
    */
   resumeRecording() {
     this.cameraSession.resumeRecording()
+  }
+  cancellationCallback(){
+      this.this.callbackList.forEach(
+        callback =>{
+          callback?.()
+        }
+      )
   }
 
   build() {
