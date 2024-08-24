@@ -299,7 +299,14 @@ export default class CameraSession {
     this.cameraInput.open();
     this.capability = this.cameraManager.getSupportedOutputCapability(currentDevice, camera.SceneMode.NORMAL_PHOTO);
     if (surfaceId && props.preview) {
-      this.previewProfile = this.capability.previewProfiles[this.capability.previewProfiles.length - 1];
+      // previewProfile是通过this.capability.previewProfiles获取的，这里和OS沟通可设置为通用的1920和1080
+      this.previewProfile = {
+        format:1003,
+        size:{
+          width:1920,
+          height:1080
+        }
+      }
       Logger.info(TAG, `initPhotoSession createCameraInput ${JSON.stringify(this.previewProfile)})`);
       this.previewOutput = this.cameraManager.createPreviewOutput(this.previewProfile, surfaceId);
     }
