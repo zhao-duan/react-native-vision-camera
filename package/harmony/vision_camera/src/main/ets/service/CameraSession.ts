@@ -392,7 +392,8 @@ export default class CameraSession {
     }
     let videoConfig: media.AVRecorderProfile = {
       fileFormat: media.ContainerFormatType.CFT_MPEG_4,
-      videoBitrate: videoBitRate * 70_000_000,
+      // videoBitrate: videoBitRate * 70_000_000,
+      videoBitrate: 512000,
       videoCodec: options.videoCodec === 'h265' ? media.CodecMimeType.VIDEO_HEVC : media.CodecMimeType.VIDEO_AVC,
       videoFrameWidth: this.videoSize.width,
       videoFrameHeight: this.videoSize.height,
@@ -404,11 +405,11 @@ export default class CameraSession {
     } : videoConfig
     this.videoUri = `${this.basicPath}/${this.outPathArray[1]}/${Date.now()}.${options.fileType || 'mp4'}`;
     // 点击开始录制才询问是否保存到图库,此时options.fileType不是undefined
-    if (options.fileType != undefined) {
-      this.videoUri =
-        await this.getMediaLibraryUri(this.videoUri, `${Date.now()}`, `${options.fileType || 'mp4'}`,
-          photoAccessHelper.PhotoType.VIDEO)
-    }
+    // if (options.fileType != undefined) {
+    //   this.videoUri =
+    //     await this.getMediaLibraryUri(this.videoUri, `${Date.now()}`, `${options.fileType || 'mp4'}`,
+    //       photoAccessHelper.PhotoType.VIDEO)
+    // }
     this.videoFile = fs.openSync(this.videoUri, fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE);
     let aVAudio = {
       audioSourceType: media.AudioSourceType.AUDIO_SOURCE_TYPE_MIC
@@ -706,7 +707,9 @@ export default class CameraSession {
         Logger.error(TAG, `setPhotoOutputCb photoAssetAvailable failed, ${JSON.stringify(err)}`);
         return;
       }
-      this.savePicture(photoAsset);
+      const uri = photoAsset.get('uri') as string;
+      this.photoPath = uri;
+      // this.savePicture(photoAsset);
     });
   }
 

@@ -305,7 +305,7 @@ export struct VisionCameraView {
       Logger.info(TAG, `updateProps, videoStabilizationModeChange: ${props.videoStabilizationMode}`);
       this.cameraSession.setVideoStabilizationMode(false, props.videoStabilizationMode);
     }
-    this.cameraSession.setResizeMode(props.resizeMode, this.localDisplay?.width, this.localDisplay?.height,
+    this.cameraSession.setResizeMode(props.resizeMode, this.localDisplayWidth, this.localDisplayHeight,
       (width, height) => {
         this.componentWidth = width;
         this.componentHeight = height;
