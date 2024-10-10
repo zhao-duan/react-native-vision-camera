@@ -912,6 +912,7 @@ export default class CameraSession {
   convertCameraDevice(): CameraDeviceInfo[] {
     if (!this.camerasArray) {
       Logger.error(TAG, 'convertCameraDeviceInfo cameraDevices is null');
+      return;
     }
     let cameraDevices = this.camerasArray
 
@@ -919,8 +920,8 @@ export default class CameraSession {
     for (const cameraDevice of cameraDevices) {
       let cameraInfo: CameraDeviceInfo = {} as CameraDeviceInfo;
       cameraInfo.id = cameraDevice.cameraId;
-      this.getDeviceTypeAndConnectType(cameraDevice, cameraInfo);
-
+      cameraInfo.physicalDevices = this.getCameraPhysicalDevices(cameraDevice);
+      cameraInfo.position = this.getCameraPosition(cameraDevice);
       cameraInfo.hasFlash = this.cameraManager?.isTorchSupported();
       cameraInfo.hasTorch = this.cameraManager?.isTorchModeSupported(camera.TorchMode.ON);
 
@@ -951,26 +952,31 @@ export default class CameraSession {
     return cameraArray;
   }
 
-  private getDeviceTypeAndConnectType(cameraDevice: camera.CameraDevice, cameraInfo: CameraDeviceInfo) {
-    if (cameraDevice.cameraType === camera.CameraType.CAMERA_TYPE_WIDE_ANGLE) {
-      cameraInfo.physicalDevices = [PhysicalCameraDeviceType.WIDE_ANGLE_CAMERA];
-    } else if (cameraDevice.cameraType === camera.CameraType.CAMERA_TYPE_ULTRA_WIDE) {
-      cameraInfo.physicalDevices = [PhysicalCameraDeviceType.ULTRA_WIDE_ANGLE_CAMERA];
-    } else {
+  private getCameraPhysicalDevices(cameraDevice: camera.CameraDevice) {
+    if (cameraDevice.cameraType === camera.CameraType.CAMERA_TYPE_WIDE_ANGLE) { // 广角相机
+      return [PhysicalCameraDeviceType.WIDE_ANGLE_CAMERA];
     }
-
-    if (cameraDevice.connectionType === camera.ConnectionType.CAMERA_CONNECTION_BUILT_IN) {
-      if (cameraDevice.cameraPosition === camera.CameraPosition.CAMERA_POSITION_BACK) {
-        cameraInfo.position = CameraPosition.BACK;
-      } else if (cameraDevice.cameraPosition === camera.CameraPosition.CAMERA_POSITION_FRONT) {
-        cameraInfo.position = CameraPosition.FRONT;
-      } else {
-      }
-    } else {
-      cameraInfo.position = CameraPosition.EXTERNAL;
+    if (cameraDevice.cameraType === camera.CameraType.CAMERA_TYPE_ULTRA_WIDE) { // 超广角相机
+      return [PhysicalCameraDeviceType.ULTRA_WIDE_ANGLE_CAMERA];
     }
+    if (cameraDevice.cameraType === camera.CameraType.CAMERA_TYPE_TELEPHOTO) { // 长焦相机
+      return [PhysicalCameraDeviceType.TELEPHOTO_CAMERA];
+    }
+    return [];
   }
 
+  private getCameraPosition(cameraDevice: camera.CameraDevice) {
+    if (cameraDevice.connectionType !== camera.ConnectionType.CAMERA_CONNECTION_BUILT_IN) {
+      return CameraPosition.EXTERNAL;
+    }
+    if (cameraDevice.cameraPosition === camera.CameraPosition.CAMERA_POSITION_BACK) {
+      return CameraPosition.BACK;
+    }
+    if (cameraDevice.cameraPosition === camera.CameraPosition.CAMERA_POSITION_FRONT) {
+      return CameraPosition.FRONT;
+    }
+    return CameraPosition.BACK;
+  }
 
   private getVideoSessionParams(cameraDevice: camera.CameraDevice, cameraInfo: CameraDeviceInfo,
     cameraDevices: camera.CameraDevice[] | undefined) {
