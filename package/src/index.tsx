@@ -223,8 +223,17 @@ export const Camera = forwardRef<VisionCameraRef, VisionCameraProps>(
 
         const getAvailableCameraDevices = useCallback(
             () => {
-                if (!VisionCameraRef.current) throw new Error("VisionCameraRef.current is NaN");
-                return VisionCameraCommands.getAvailableCameraDevices(VisionCameraRef.current);
+                return new Promise(resolve => {
+                    const eventListener = DeviceEventEmitter.addListener(
+                        'getAvailableCameraDevices',
+                        (data) => {
+                            resolve(data);
+                            eventListener.remove();
+                        },
+                    );
+                    if (!VisionCameraRef.current) throw new Error("VisionCameraRef.current is NaN");
+                    VisionCameraCommands.getAvailableCameraDevices(VisionCameraRef.current);
+                });
             },
             []
         );
@@ -239,48 +248,102 @@ export const Camera = forwardRef<VisionCameraRef, VisionCameraProps>(
 
         const getCameraPermissionStatus = useCallback(
             () => {
-                if (!VisionCameraRef.current) throw new Error("VisionCameraRef.current is NaN");
-                return VisionCameraCommands.getCameraPermissionStatus(VisionCameraRef.current);
+                return new Promise(resolve => {
+                    const eventListener = DeviceEventEmitter.addListener(
+                        'getCameraPermissionStatus',
+                        (data) => {
+                            resolve(data);
+                            eventListener.remove();
+                        },
+                    );
+                    if (!VisionCameraRef.current) throw new Error("VisionCameraRef.current is NaN");
+                    VisionCameraCommands.getCameraPermissionStatus(VisionCameraRef.current);
+                });
             },
             []
         );
 
         const requestCameraPermission = useCallback(
             () => {
-                if (!VisionCameraRef.current) throw new Error("VisionCameraRef.current is NaN");
-                return VisionCameraCommands.requestCameraPermission(VisionCameraRef.current);
+                return new Promise(resolve => {
+                    const eventListener = DeviceEventEmitter.addListener(
+                        'requestCameraPermission',
+                        (data) => {
+                            resolve(data);
+                            eventListener.remove();
+                        },
+                    );
+                    if (!VisionCameraRef.current) throw new Error("VisionCameraRef.current is NaN");
+                    VisionCameraCommands.requestCameraPermission(VisionCameraRef.current);
+                });
             },
             []
         );
 
         const getMicrophonePermissionStatus = useCallback(
             () => {
-                if (!VisionCameraRef.current) throw new Error("VisionCameraRef.current is NaN");
-                return VisionCameraCommands.getMicrophonePermissionStatus(VisionCameraRef.current);
+                return new Promise(resolve => {
+                    const eventListener = DeviceEventEmitter.addListener(
+                        'getMicrophonePermissionStatus',
+                        (data) => {
+                            resolve(data);
+                            eventListener.remove();
+                        },
+                    );
+                    if (!VisionCameraRef.current) throw new Error("VisionCameraRef.current is NaN");
+                    VisionCameraCommands.getMicrophonePermissionStatus(VisionCameraRef.current);
+                });
             },
             []
         );
 
         const requestMicrophonePermission = useCallback(
             () => {
-                if (!VisionCameraRef.current) throw new Error("VisionCameraRef.current is NaN");
-                return VisionCameraCommands.requestMicrophonePermission(VisionCameraRef.current);
+                return new Promise(resolve => {
+                    const eventListener = DeviceEventEmitter.addListener(
+                        'requestMicrophonePermission',
+                        (data) => {
+                            resolve(data);
+                            eventListener.remove();
+                        },
+                    );
+                    if (!VisionCameraRef.current) throw new Error("VisionCameraRef.current is NaN");
+                    VisionCameraCommands.requestMicrophonePermission(VisionCameraRef.current);
+                });
             },
             []
         );
 
         const getLocationPermissionStatus = useCallback(
             () => {
-                if (!VisionCameraRef.current) throw new Error("VisionCameraRef.current is NaN");
-                return VisionCameraCommands.getLocationPermissionStatus(VisionCameraRef.current);
+                return new Promise(resolve => {
+                    const eventListener = DeviceEventEmitter.addListener(
+                        'getLocationPermissionStatus',
+                        (data) => {
+                            resolve(data);
+                            eventListener.remove();
+                        },
+                    );
+                    if (!VisionCameraRef.current) throw new Error("VisionCameraRef.current is NaN");
+                    VisionCameraCommands.getLocationPermissionStatus(VisionCameraRef.current);
+                });
             },
             []
         );
 
         const requestLocationPermission = useCallback(
             () => {
-                if (!VisionCameraRef.current) throw new Error("VisionCameraRef.current is NaN");
-                return VisionCameraCommands.requestLocationPermission(VisionCameraRef.current);
+                return new Promise(resolve => {
+                    const eventListener = DeviceEventEmitter.addListener(
+                        'requestLocationPermission',
+                        (data) => {
+                            resolve(data);
+                            eventListener.remove();
+                        },
+                    );
+                    if (!VisionCameraRef.current) throw new Error("VisionCameraRef.current is NaN");
+                    VisionCameraCommands.requestLocationPermission(VisionCameraRef.current);
+                });
             },
             []
         );
@@ -312,7 +375,7 @@ export const Camera = forwardRef<VisionCameraRef, VisionCameraProps>(
             },
             [onInitialized]
         );
-        
+
         const onVisionCameraShutter = useCallback(
             (shutterEvent: NativeSyntheticEvent<{ type: 'photo' | 'snapshot' }>) => {
                 onShutter?.(shutterEvent.nativeEvent);

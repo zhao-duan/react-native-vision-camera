@@ -55,7 +55,7 @@ const TAG: string = 'VisionCameraView:'
 
 @Component
 export struct VisionCameraView {
-  private callbackList:Array<()=> void> =[]
+  private callbackList: Array<() => void> = []
   public static readonly NAME = VisionCameraViewSpec.NAME
   public ctx!: RNComponentContext
   public tag: number = 0
@@ -220,7 +220,7 @@ export struct VisionCameraView {
         await this.scanSession.scanStop();
         this.scanSession.scanRelease();
         Logger.info(TAG, `subscribeToLifecycleEvents BACKGROUND , ${JSON.stringify(this.scanSession)}`);
-      }
+      }else {}
     }))
 
     this.ctx.rnInstance.subscribeToLifecycleEvents("CONFIGURATION_UPDATE", () => {
@@ -364,7 +364,7 @@ export struct VisionCameraView {
     if (this.ctx) {
       this.cleanCommandCallback = this.ctx.componentCommandReceiver.registerCommandCallback(
         this.tag,
-        (command, args: (string | number | boolean | object)[]) => {
+        async (command, args: (string | number | boolean | object)[]) => {
           if (command === 'takePhoto') {
             if (this.currentProps.photo) {
               Logger.debug(TAG, `registerCommandCallback: takePhoto,  ${JSON.stringify(args)}`)
@@ -393,27 +393,38 @@ export struct VisionCameraView {
           }
           if (command === 'getAvailableCameraDevices') {
             Logger.debug(TAG, `registerCommandCallback: getAvailableCameraDevices.`)
-            this.getAvailableCameraDevices();
+            const result = this.getAvailableCameraDevices();
+            this.ctx.rnInstance.emitDeviceEvent('getAvailableCameraDevices', result);
           }
           if (command === 'getCameraPermissionStatus') {
             Logger.debug(TAG, `registerCommandCallback: getCameraPermissionStatus.`)
-            this.getCameraPermissionStatus();
+            const result = this.getCameraPermissionStatus();
+            this.ctx.rnInstance.emitDeviceEvent('getCameraPermissionStatus', result);
           }
           if (command === 'requestCameraPermission') {
             Logger.debug(TAG, `registerCommandCallback: requestCameraPermission.`)
-            this.requestCameraPermission();
+            const result = await this.requestCameraPermission();
+            this.ctx.rnInstance.emitDeviceEvent('requestCameraPermission', result);
           }
           if (command === 'getMicrophonePermissionStatus') {
             Logger.debug(TAG, `registerCommandCallback: getMicrophonePermissionStatus.`)
-            this.getMicrophonePermissionStatus();
+            const result = this.getMicrophonePermissionStatus();
+            this.ctx.rnInstance.emitDeviceEvent('getMicrophonePermissionStatus', result);
           }
           if (command === 'requestMicrophonePermission') {
             Logger.debug(TAG, `registerCommandCallback: requestMicrophonePermission.`)
-            this.requestMicrophonePermission();
+            const result = await this.requestMicrophonePermission();
+            this.ctx.rnInstance.emitDeviceEvent('requestMicrophonePermission', result);
+          }
+          if (command === 'requestLocationPermission') {
+            Logger.debug(TAG, `registerCommandCallback: requestLocationPermission.`)
+            const result = await this.requestLocationPermission();
+            this.ctx.rnInstance.emitDeviceEvent('requestLocationPermission', result);
           }
           if (command === 'getLocationPermissionStatus') {
             Logger.debug(TAG, `registerCommandCallback: getLocationPermissionStatus.`)
-            this.getLocationPermissionStatus();
+            const result = this.getLocationPermissionStatus();
+            this.ctx.rnInstance.emitDeviceEvent('getLocationPermissionStatus', result);
           }
           if (command === 'startRecording') {
             const options = args[0] as RecordVideoOptions;
@@ -568,12 +579,13 @@ export struct VisionCameraView {
   resumeRecording() {
     this.cameraSession.resumeRecording()
   }
-  cancellationCallback(){
-      this.callbackList.forEach(
-        callback =>{
-          callback?.()
-        }
-      )
+
+  cancellationCallback() {
+    this.callbackList.forEach(
+      callback => {
+        callback?.()
+      }
+    )
   }
 
   build() {

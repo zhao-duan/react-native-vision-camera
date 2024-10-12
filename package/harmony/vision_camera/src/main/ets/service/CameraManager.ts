@@ -64,7 +64,7 @@ export default class CameraManager {
    * 获取当前麦克风录制权限状态
    */
   getMicrophonePermissionStatus(): CameraPermissionStatus {
-    let value = new PermissionUtils().checkPermission(PermissionArray[2]);
+    let value = new PermissionUtils().checkPermission(PermissionArray[1]);
     let microStatus: CameraPermissionStatus = value ? "granted" : "not-determined";
     Logger.info(TAG, `getMicrophonePermissionStatus:${microStatus}`);
     return microStatus;
@@ -74,7 +74,7 @@ export default class CameraManager {
    * 向用户请求麦克风权限
    */
   async requestMicrophonePermission(): Promise<CameraPermissionRequestResult> {
-    let value = await new PermissionUtils().grantPermission(PermissionArray[2]);
+    let value = await new PermissionUtils().grantPermission(PermissionArray[1]);
     let requestPermission: CameraPermissionRequestResult = value ? "granted" : "denied";
     Logger.info(TAG, `requestMicrophonePermission:${requestPermission}`);
     return requestPermission;
@@ -84,7 +84,7 @@ export default class CameraManager {
    * 获取当前位置权限状态
    */
   getLocationPermissionStatus(): CameraPermissionStatus {
-    let value = new PermissionUtils().checkPermission(PermissionArray[1]);
+    let value = new PermissionUtils().checkPermission(PermissionArray[2]);
     let locationStatus: CameraPermissionStatus = value ? "granted" : "not-determined";
     Logger.info(TAG, `getLocationPermissionStatus:${locationStatus}`);
     return locationStatus;
@@ -94,7 +94,7 @@ export default class CameraManager {
    * 向用户请求位置权限
    */
   async requestLocationPermission() {
-    let value = await new PermissionUtils().grantPermission(PermissionArray[1]);
+    let value = await new PermissionUtils().grantPermission(PermissionArray[2]);
     let requestPermission: CameraPermissionRequestResult = value ? "granted" : "denied";
     Logger.info(TAG, `requestLocationPermission:${requestPermission}`);
     return requestPermission;

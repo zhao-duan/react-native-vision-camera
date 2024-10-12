@@ -720,7 +720,7 @@ export default class CameraSession {
     let status: boolean = false;
     const targetSession = this.photoSession ? this.photoSession : this.videoSession;
     try {
-      status = targetSession.isFocusModeSupported(camera.FocusMode.FOCUS_MODE_AUTO);
+      status = targetSession?.isFocusModeSupported(camera.FocusMode.FOCUS_MODE_AUTO);
     } catch (error) {
       Logger.error(TAG, `The focus isFocusModeSupported call failed. error code: ${JSON.stringify(error)}`);
       return;
@@ -864,6 +864,7 @@ export default class CameraSession {
     photoFile.isRawPhoto = false;
     photoFile.orientation = this.getOrientation(this.photoCaptureSetting.rotation)
 
+
     this.photoPath = '';
     return photoFile;
   }
@@ -948,7 +949,7 @@ export default class CameraSession {
         cameraDeviceFormat.videoStabilizationModes = supportedVideoStabilizationMode;
         cameraDeviceFormats.push(cameraDeviceFormat);
       }
-      this.getVideoSessionParams(cameraDevice, cameraInfo, cameraDevices);
+      // this.getVideoSessionParams(cameraDevice, cameraInfo, cameraDevices);
       cameraInfo.formats = cameraDeviceFormats;
       cameraArray.push(cameraInfo);
     }
